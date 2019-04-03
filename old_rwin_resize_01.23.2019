@@ -1,0 +1,128 @@
+(defun rwin-resize ()
+ "Set the height of the R buffer window to my preferred height using 'cond', then open re-builder and re-size its window to my desired size.
+This should work regardless of the number of windows and you should be able to call it from any window."
+ (interactive)
+
+ ;; start by selecting the top, left window; the re-sizing should start from here
+ ;; nicely enough, window-at-side-list seems to grab the desired window, regardless of where point is
+ (select-window (car (window-at-side-list nil 'left)))
+
+  ;; set up variables
+ ;; current-point gets you out of re-builder jumping you to a point in the current away from where you were editing
+ (let ((current-point (point))
+       (cb (current-buffer))
+       (oldthresh split-width-threshold) ;; or 100
+       (right-window-buffer))
+
+ ;; need cond here for the situation where you have a split vertical window at right (e.g., a help buffer)
+ (cond
+ ;; vertical deletion works, so do that
+ ((delete-other-windows-vertically) (message "deleted vertically"))
+
+ ;; RE-Builder AND R have windows, so delete both
+ ((and (not (= (length (window-list)) 2))
+       (get-buffer-window "*RE-Builder*")
+       (get-buffer-window "*R*"))
+  (progn
+    (delete-window (get-buffer-window "*RE-Builder*"))
+    (delete-window (get-buffer-window "*R*"))))
+
+ ;; just RE-Builder has window so delete only that
+ ((and (not (= (length (window-list)) 1))
+       (get-buffer-window "*RE-Builder*"))
+  (delete-window (get-buffer-window "*RE-Builder*")))
+
+ ;; just R has window so delete only that
+ ((and (not (= (length (window-list)) 1))
+       (get-buffer-window "*R*"))
+  (delete-window (get-buffer-window "*R*")))
+
+ ;; something else, unlikely in my setup
+ (t (message "some other configuration")))
+
+   ;; if RE-builder is the current buffer, we can't set cb to this
+   (when (eq cb (get-buffer "*RE-Builder*"))
+     (ibuffer)
+     (setq current-point (point))
+     (setq cb (get-buffer-create "*Ibuffer*")))
+
+   ;; start R if it's not open already; we have to pause because R can't keep up w/ emacs
+   (when (not (bufferp (get-buffer "*R*")))
+     (split-window-vertically)
+     (other-window 1)
+     (R)
+     (sit-for 5))
+
+   ;; account for a situation where a help buffer exists in the right window
+   (when (window-in-direction 'right)
+     (progn
+       (select-window (window-in-direction 'right))
+       (setq right-window-buffer (current-buffer))
+       (delete-window)))
+
+   ;; now start the re-sizing process
+   ;; use 'cond' here to account for various possible R session/window setups
+   (cond
+
+    ;; 1. R is not open and no window exists for it
+    ((and (not (get-buffer-window "*R*" 0))
+          (not (bufferp (get-buffer "*R*"))))
+     (progn
+       (setq split-width-threshold most-positive-fixnum)  ;; return to 100
+       (R)
+       (switch-to-buffer cb)
+       (pop-to-buffer "*R*" t t)
+       (font-lock-mode -1)
+       (eldoc-mode -1)
+       (set-window-text-height (car (window-list)) 15)
+       (switch-to-buffer-other-window cb)
+       (setq split-width-threshold oldthresh)))
+
+    ;; 2. R is open, but no window exists for it
+    ((and (not (get-buffer-window "*R*" 0))
+          (bufferp (get-buffer "*R*")))
+     (progn
+       (setq split-width-threshold most-positive-fixnum)  ;; return to 100
+       (switch-to-buffer-other-window "*R*" t)
+       (font-lock-mode -1)
+       (eldoc-mode -1)
+       (set-window-text-height (car (window-list)) 15)
+       (setq split-width-threshold oldthresh)))
+
+    ;; 3. R is open and occupies its usual position on the screen
+    ((and (get-buffer-window "*R*" 0)
+          (bufferp (get-buffer "*R*"))
+          (not (= (length (window-list)) 1)))
+     (progn
+       (setq split-width-threshold most-positive-fixnum)  ;; return to 100
+       (pop-to-buffer "*R*" t t)
+       (font-lock-mode -1)
+       (eldoc-mode -1)
+       (set-window-text-height (car (window-list)) 15)
+       (setq split-width-threshold oldthresh)))
+
+   ;; 4. R is the only buffer w/ a window
+   ((and (get-buffer-window "*R*" 0)
+         (= (length (window-list)) 1))
+    (progn
+      (setq split-width-threshold most-positive-fixnum)  ;; return to 100
+      (pop-to-buffer "*R*" t t)
+      (set-window-text-height (car (window-list)) 15)
+      (font-lock-mode -1)
+      (eldoc-mode -1)
+      (setq split-width-threshold oldthresh))))
+
+   ;; call this now so that re-builder ends up in the desired spot
+   (switch-to-buffer-other-window cb)
+
+   ;; open re-builder, set the window to the desired size, and jump back to where you were in the other window
+   (progn
+     (re-builder)
+     (set-window-text-height (car (window-list)) 3))
+   (switch-to-buffer-other-window cb)
+   (goto-char current-point)
+
+ ;; last step to restore a side window if it was active
+ (when right-window-buffer
+   (display-buffer-pop-up-window right-window-buffer nil)))
+   )
