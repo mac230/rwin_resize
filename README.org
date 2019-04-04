@@ -1,0 +1,31 @@
+# README.org     -*- mode: org; fill-column: 80; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*-
+
+
+* rwin-resize - Functions to Set Up Emacs Window Configuration for working with R
+
+This set of functions configures Emacs to have my preferred window setup for
+working with R code.  Specifically it implements a window setup as follows:
+
+
+--------------------
+|                  |               
+|                  |
+| R code buffer    |
+|                  | 
+|                  |
+|                  |
+|                  |
+|                  |
+--------------------
+| RE-Builder       |
+--------------------
+|                  |
+| R process        | 
+--------------------                     
+
+I use the main window for editing code and sending it to the inferior R
+process.  RE-Builder is a useful tool in Emacs for building regular
+expressions.  Devoting a window to the inferior R process is a good way to view
+the output of code sent to it. 
+
+
