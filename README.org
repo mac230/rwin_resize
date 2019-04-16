@@ -6,22 +6,20 @@
 This set of functions configures Emacs to have my preferred window setup for
 working with R code.  Specifically it implements a window setup as follows:
 
-
---------------------
-|                  |               
-|                  |
-| R code buffer    |
-|                  | 
-|                  |
-|                  |
-|                  |
-|                  |
---------------------
-| RE-Builder       |
---------------------
-|                  |
-| R process        | 
---------------------                     
+|---------------|
+| R code buffer |
+|               |
+|               |
+|               |
+|               |
+|               |
+|               |
+|---------------|
+| RE-Builder    |
+|---------------|
+| R process     |
+|               |
+|---------------|
 
 I use the main window for editing code and sending it to the inferior R
 process.  
