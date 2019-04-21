@@ -44,7 +44,7 @@ here because the width of the 3 windows is the same.
               (eq current-buffer (get-buffer "*RE-Builder*")))
       (setq current-buffer (get-buffer "*Ibuffer*")))
 
-        ;; start by making sure we have the requisite buffers for R, RE-Builder, and python
+    ;; start by making sure we have the requisite buffers for R, RE-Builder, and python
     ;; 03.25.2019 - added function to change RE-Builder target buff and put point
     ;; back into the top window.
     ;; R
@@ -70,12 +70,15 @@ here because the width of the 3 windows is the same.
     ;; a side window is supposed to be unsplittable, so use this
     (display-buffer-in-side-window bottom-window-buffer '(side bottom))
     ;; have to set the size though
-    (set-window-text-height (get-buffer-window bottom-window-buffer) 10)
+    (set-window-text-height
+     (get-buffer-window bottom-window-buffer)
+     ;; truncate converts a float to integer
+     (truncate (* (frame-height) (float 0.25))))
 
     (display-buffer "*RE-Builder*"
                     '((display-buffer-reuse-window
                        display-buffer-below-selected)
-                      (window-height . 5)))
+                      (window-height . 4)))
 
     ;; make the windows for R and RE-builder dedicated to these buffers
     (set-window-dedicated-p (get-buffer-window bottom-window-buffer) t)
