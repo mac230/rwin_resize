@@ -1,4 +1,4 @@
-# rwin-resize     -*- mode: emacs-lisp; fill-column: 120; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*-
+;; rwin-resize     -*- mode: emacs-lisp; fill-column: 120; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*-
 
 ;; my functions for setting up my emacs environment for working with R or
 ;; python code using emacs as my ide
@@ -25,6 +25,7 @@ here because the width of the 3 windows is the same.
   (dolist (current-window (window-list))
       (progn
         (window-preserve-size current-window t nil)
+        (set-window-dedicated-p current-window nil)
         (select-window current-window t)
         (setq window-size-fixed nil)))
 
@@ -48,7 +49,11 @@ here because the width of the 3 windows is the same.
     ;; back into the top window.
     ;; R
     (when (not (bufferp (get-buffer "*R*")))
-        (R))
+      (progn
+        (split-window-vertically)
+        (other-window 1)
+        (R)
+        (sit-for 2)))
     ;; RE-Builder
     (when (not (bufferp (get-buffer "*RE-Builder*")))
       (progn
@@ -72,12 +77,12 @@ here because the width of the 3 windows is the same.
     (set-window-text-height
      (get-buffer-window bottom-window-buffer)
      ;; truncate converts a float to integer
-     (truncate (* (frame-height) (float 0.25))))
+     (truncate (* (frame-height) (float 0.2))))
 
     (display-buffer "*RE-Builder*"
                     '((display-buffer-reuse-window
                        display-buffer-below-selected)
-                      (window-height . 4)))
+                      (window-height . 5)))
 
     ;; make the windows for R and RE-builder dedicated to these buffers
     (set-window-dedicated-p (get-buffer-window bottom-window-buffer) t)
@@ -100,3 +105,88 @@ here because the width of the 3 windows is the same.
 
 (key-chord-define-global "jq" 'rwin-resize)
 
+
+(defun mac-frame-width (arg)
+  "Set frame width w/ custom input generated via data-entry-mode.
+  [1] default - 215
+  [2] full    - 364
+  [3] mid     - 280
+  [4] custom
+"
+  (interactive "P")
+  (let* ((keys '("a" "f" "j" "c"))
+         (keys-again keys)
+         (options '("default (215)" "full (364)" "mid (280)" "custom"))
+         (choice-menu '())
+         (current-window (selected-window))
+         (current-point (point))
+         (rwin-arg nil))
+
+    ;; 03.24.2019 - modification to account for window sizes
+    ;; being preserved to prevent them from being split by 'rwin-resize'
+    ;; this dolist macro undoes the protection, so now call 'rwin-resize'
+    ;; at the end to re-protect them once the frame is the desired size.
+    (dolist (current-window (window-list))
+      (progn
+        (window-preserve-size current-window t nil)
+        (select-window current-window t)
+        (setq window-size-fixed nil)))
+
+    ;; decrementing loop to create the minibuffer text for the re-sizing
+    (while options
+    (setq choice-menu
+          (cons
+           (concat
+            "\n"
+            "                                  "
+            (car keys)
+            ": "
+            (car options)
+            "\n") choice-menu)
+          options (cdr options)
+          keys (cdr keys)))
+
+    ;; set up our display and read the user choice in the minibuffer
+    (let* ((choice
+            (read-key-sequence (propertize
+                                (mapconcat 'identity choice-menu "")
+                                'face 'mac-window-select-face)))
+           (new-width
+            (seq-position keys-again choice)))
+
+  ;; 'cond' function to set frame width; uses position in list of your choice
+  (cond
+   ((= new-width 0)
+    (set-frame-width
+     ;; current frame
+     nil
+     ;; 0.6 * max width
+     ;; truncate converts to integer by rounding to 0
+     (truncate (* (float 0.6) (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
+     ;; don't 'pretend' and set pixelwise
+     nil t))
+   ((= new-width 1)
+    (set-frame-width nil
+     (truncate (nth 3 (assoc 'geometry (car (display-monitor-attributes-list)))))
+     nil t))
+   ((= new-width 2)
+    (set-frame-width nil
+     (truncate (* (float 0.75) (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
+     nil t))
+   ((= new-width 3)
+    (progn
+      (global-data-entry-mode)
+      (set-frame-width nil
+       (truncate (* (float (read-number "fractional width: ")) (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
+       nil t)
+      (global-data-entry-mode -1)))
+   (t
+    (set-frame-width nil
+     (truncate (* (float 0.6) (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
+     nil t))
+                     ))
+  (select-window current-window)
+  (goto-char current-point)
+  (message "")
+  (rwin-resize (prefix-numeric-value arg))
+  ))
