@@ -6,7 +6,7 @@ This set of functions configures Emacs to have my preferred window setup for
 working with R or python code.  Specifically it implements a window setup as
 follows:
 
-```elisp
+#+BEGIN_SRC emacs-lisp
 |---------------|
 | R code buffer |
 |               |
@@ -20,7 +20,7 @@ follows:
 | R process     |
 |               |
 |---------------|
-```
+#+END_SRC
 
 There is one function in the code, 'rwin-resize'.  Calling it with no prefix
 argument implements a window configuration where R is in the bottom window.
