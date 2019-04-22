@@ -1,14 +1,14 @@
 # README.org     -*- mode: org; fill-column: 80; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*-
 
-
-* rwin-resize - Functions to Set Up Emacs Window Configuration for working with R
+* rwin-resize - Emacs Window Configuration for R or Python Code Editing
 
 This set of functions configures Emacs to have my preferred window setup for
-working with R code.  Specifically it implements a window setup as follows:
+working with R or python code.  Specifically it implements a window setup as
+follows:
 
+```elisp
 |---------------|
 | R code buffer |
-|               |
 |               |
 |               |
 |               |
@@ -20,17 +20,22 @@ working with R code.  Specifically it implements a window setup as follows:
 | R process     |
 |               |
 |---------------|
+```
 
-I use the main window for editing code and sending it to the inferior R
-process.  
+There is one function in the code, 'rwin-resize'.  Calling it with no prefix
+argument implements a window configuration where R is in the bottom window.
+With a prefix argument, calling the function puts the inferior Python process in
+the bottom window.  I bind the function to a key-chord, "jq".
 
-RE-Builder is a useful tool in Emacs for building regular
-expressions.  
+I use the main window for editing code and sending it to the inferior R or
+Python process.
 
-Devoting a window to the inferior R process is a good way to view
-the output of code sent to it. 
+RE-Builder is a useful tool in Emacs for building regular expressions.
 
-Note that the R window is setup as a 'side-window' and thus cannot be split and
-is dedicated to the inferior R process buffer. 
+Devoting a window to the inferior R process is a good way to view the output of
+code sent to it.
+
+Note that the R/Python window is setup as a 'side-window' and thus cannot be
+split and is dedicated to the inferior R process buffer.
 
 

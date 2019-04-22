@@ -4,8 +4,7 @@
 ;; python code using emacs as my ide
 
 (defun rwin-resize (arg)
-  "03.25.2019 version
-Re-size windows to my preferred setup with an editing buffer at top left,
+"Re-size windows to my preferred setup with an editing buffer at top left,
 RE-Builder in a very short middle window, and R in a short bottom window.
 
 This now uses a 'side-window' for R, effectively making it the only buffer
@@ -99,5 +98,5 @@ here because the width of the 3 windows is the same.
     (select-window current-window)
     (goto-char current-point)))
 
-
+(key-chord-define-global "jq" 'rwin-resize)
 
