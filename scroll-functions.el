@@ -1,3 +1,4 @@
+
 ;; functions for scrolling help functions in other windows
 
 (defun mac-pdf-man-R-or-help-scroll (val)
@@ -16,7 +17,6 @@
          (scroll-error-top-bottom t)
          (scroll-fun
           (lambda (doc-buf) (progn
-                              (recenter)
                               (switch-to-buffer-other-window doc-buf)
                               (when (bobp) (scroll-up-command 1))
                               (when (eobp) (previous-line 1))
