@@ -22,7 +22,18 @@
                               (when (eobp) (previous-line 1))
                               (scroll-up-command val)
                               (switch-to-buffer-other-window current-buffer)
-                              (goto-char current-point)))))
+                              (goto-char current-point))))
+         (pdf-scroll-fun
+          (lambda ()
+            (switch-to-buffer-other-window pdf)
+            (setq val (/ val (abs val)))
+            (unless (or
+                     (< (+ val (pdf-view-current-page)) 1)
+                     (> (+ val (pdf-view-current-page)) (pdf-cache-number-of-pages)))
+                     (pdf-view-next-page-command val))
+            (switch-to-buffer-other-window current-buffer)
+            (goto-char current-point)))
+         )
 
   ;; use dolist to find which of the different buffer types you have
   (dolist (buffer window-list)
@@ -55,11 +66,7 @@
          (not man)
          (not R-buffer)
          (not help-page))
-    (progn
-      (switch-to-buffer-other-window pdf)
-      (pdf-view-next-page)
-      (switch-to-buffer-other-window current-buffer)
-      (goto-char current-point)))
+    (funcall pdf-scroll-fun))
 
    ;; have just a man page
    ((and man
@@ -90,7 +97,7 @@
       (while (not (string= stop "g"))
         (cond
          ((string= key "SPC")
-          (funcall scroll-fun pdf))
+          (funcall pdf-scroll-fun))
 
          ((string= key "r")
           (funcall scroll-fun R-buffer))
@@ -100,13 +107,19 @@
 
          ((string= key "h")
           (funcall scroll-fun help-page)))
+
         (setq stop (key-description (read-key-sequence "SPC=pdf, r=R, m=man, h=help, g=quit: ")))
         )))
 
-      (t
-       (funcall scroll-fun
-                (window-buffer (car (window-at-side-list nil 'right)))))
-      )))
+   ;; contingency function
+   (t
+    (if (eq pdf (window-buffer (car (window-at-side-list nil 'right))))
+        (funcall pdf-scroll-fun)
+      (funcall scroll-fun
+               (window-buffer (car (window-at-side-list nil 'right))))))
+   ))
+  )
+
 
 (defun mac-pdf-man-help-or-R-next-page ()
   "Function to move to the previous page of a pdf or scroll an R or man page buffer when working in a separate, non-pdf buffer."
