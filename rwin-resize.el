@@ -127,6 +127,16 @@ editing window.
 (key-chord-define-global "jq" 'rwin-resize)
 
 
+(defun shell-send-line ()
+  "Send the current line to the shell process."
+  (interactive)
+  (let ((shell-input (buffer-substring
+                      (line-beginning-position)
+                      (line-end-position))))
+    (with-current-buffer "*shell*"
+      (insert shell-input)
+      (comint-send-input))))
+
 (defun send-line-R-python-shell ()
   "Send the current line to R, python, or shell based on context."
   (interactive)
@@ -142,7 +152,8 @@ editing window.
 
    ((or (eq major-mode 'shell-mode)
        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom)))))
-    (shell-send-line))))
+    (shell-send-line))
+   ))
 
 
 
