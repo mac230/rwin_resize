@@ -19,6 +19,9 @@ Note that the general goal here is to keep RE-Builder and R from being split,
 so that only the top window is split to display help/man/R help buffers.  Most
 docs/forums recommend doing this w/ 'split-window-threshold', which doesn't work
 here because the width of the 3 windows is the same.
+
+As of 2019.05.25, now contains code for using R, python, and shell for the lower
+editing window.
 "
   (interactive "P")
   ;; undo any existing window protections
@@ -48,24 +51,42 @@ here because the width of the 3 windows is the same.
     ;; 03.25.2019 - added function to change RE-Builder target buff and put point
     ;; back into the top window.
     ;; R
-    (when (not (bufferp (get-buffer "*R*")))
+    (when (not (and
+                (get-process "R")
+                (bufferp (get-buffer "*R*"))))
       (progn
         (split-window-vertically)
         (other-window 1)
         (R)
         (sit-for 2)))
+
     ;; RE-Builder
     (when (not (bufferp (get-buffer "*RE-Builder*")))
       (progn
         (re-builder)
         (reb-change-target-buffer current-buffer)))
+
     ;; Python
-    (when (not (bufferp (get-buffer "*Python*")))
+    (when (not (and
+                (get-process "Python")
+                (bufferp (get-buffer "*Python*"))))
       (run-python))
 
-    (if (= (prefix-numeric-value arg) 1)
-        (setq bottom-window-buffer (get-buffer "*R*"))
-      (setq bottom-window-buffer (get-buffer "*Python*")))
+    ;; shell
+    (when (not (and
+                (get-process "shell")
+              (bufferp (get-buffer "*shell*"))))
+      (shell))
+
+    (cond
+     ((= (prefix-numeric-value arg) 1)
+      (setq bottom-window-buffer (get-buffer "*R*")))
+
+     ((= (prefix-numeric-value arg) 2)
+      (setq bottom-window-buffer (get-buffer "*shell*")))
+
+     (t
+      (setq bottom-window-buffer (get-buffer "*Python*"))))
 
     ;; now back to the editing window
     (select-window (car (window-at-side-list nil 'left)))
@@ -104,6 +125,25 @@ here because the width of the 3 windows is the same.
     (goto-char current-point)))
 
 (key-chord-define-global "jq" 'rwin-resize)
+
+
+(defun send-line-R-python-shell ()
+  "Send the current line to R, python, or shell based on context."
+  (interactive)
+
+  (cond
+   ((or (eq major-mode 'ess-mode)
+       (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+    (ess-eval-line))
+
+   ((or (eq major-mode 'python-mode)
+       (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+    (elpy-shell-send-region-or-buffer))
+
+   ((or (eq major-mode 'shell-mode)
+       (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+    (shell-send-line))))
+
 
 
 (defun mac-frame-width (arg)
