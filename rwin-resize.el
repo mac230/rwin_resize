@@ -127,15 +127,17 @@ editing window.
 (key-chord-define-global "jq" 'rwin-resize)
 
 
-(defun shell-send-line ()
-  "Send the current line to the shell process."
+(defun comint-send-line (buf)
+  "Send the current line to a buffer"
   (interactive)
   (let ((shell-input (buffer-substring
                       (line-beginning-position)
                       (line-end-position))))
-    (with-current-buffer "*shell*"
+    (with-current-buffer buf
       (insert shell-input)
       (comint-send-input))))
+
+
 
 (defun send-line-R-python-shell ()
   "Send the current line to R, python, or shell based on context."
@@ -148,12 +150,27 @@ editing window.
 
    ((or (eq major-mode 'python-mode)
        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom)))))
-    (elpy-shell-send-region-or-buffer))
+    (comint-send-line (process-buffer (get-process "Python"))))
 
    ((or (eq major-mode 'shell-mode)
        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom)))))
-    (shell-send-line))
+    (comint-send-line (process-buffer (get-process "shell"))))
    ))
+
+
+
+
+(defun r-or-python-send-region ()
+  "Send the current region to the R or python process depending on context."
+  (interactive)
+  (cond
+   ((or (eq major-mode 'ess-mode)
+        (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+    (ess-eval-region-or-function-or-paragraph nil))
+
+   ((or (eq major-mode 'python-mode)
+       (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+    (elpy-shell-send-statement))))
 
 
 
