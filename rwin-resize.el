@@ -154,7 +154,9 @@ editing window.
 
    ((or (eq major-mode 'shell-mode)
        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom)))))
-    (comint-send-line (process-buffer (get-process "shell"))))
+    (progn
+      (comint-send-line (process-buffer (get-process "shell")))
+      (shell-buffer-update-dir-fun)))
    ))
 
 
@@ -178,10 +180,23 @@ editing window.
         (sit-for 0.2)
         ;; deal w/ the duplicating prompt effects of sending a region
         (comint-send-input)
-        )))
+        )
+      (shell-buffer-update-dir-fun)))
    (t
     (message "No R, python, or shell process for this buffer."))
    ))
+
+
+(defun shell-buffer-update-dir-fun ()
+  "Keep the working dir of a shell script buffer in sync with the working dir of the shell process buffer."
+  (let ((current-buffer (current-buffer))
+        (working-dir))
+    (with-current-buffer "*shell*"
+      (setq working-dir (substring (pwd) 10)))
+    (set-buffer current-buffer)
+    (cd working-dir)))
+  
+
 
 
 
@@ -269,3 +284,5 @@ editing window.
   (message "")
   (rwin-resize (prefix-numeric-value arg))
   ))
+
+
