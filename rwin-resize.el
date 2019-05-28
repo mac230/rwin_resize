@@ -158,9 +158,7 @@ editing window.
    ))
 
 
-
-
-(defun r-or-python-send-region ()
+(defun r-python-or-shell-send-region ()
   "Send the current region to the R or python process depending on context."
   (interactive)
   (cond
@@ -170,7 +168,20 @@ editing window.
 
    ((or (eq major-mode 'python-mode)
        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom)))))
-    (elpy-shell-send-statement))))
+    (elpy-shell-send-statement))
+
+   ((or (eq major-mode 'sh-mode))
+    (let ((shell-input (buffer-substring (point) (mark))))
+      (with-current-buffer "*shell*"
+        (insert shell-input)
+        (comint-send-input)
+        (sit-for 0.2)
+        ;; deal w/ the duplicating prompt effects of sending a region
+        (comint-send-input)
+        )))
+   (t
+    (message "No R, python, or shell process for this buffer."))
+   ))
 
 
 
