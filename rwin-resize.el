@@ -190,7 +190,8 @@ editing window.
 (defun shell-buffer-update-dir-fun ()
   "Keep the working dir of a shell script buffer in sync with the working dir of the shell process buffer."
   (let ((current-buffer (current-buffer))
-        (working-dir))
+        (working-dir)
+        (inhibit-message t))
     (with-current-buffer "*shell*"
       (setq working-dir (substring (pwd) 10)))
     (set-buffer current-buffer)
