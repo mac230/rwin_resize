@@ -78,12 +78,21 @@ editing window.
               (bufferp (get-buffer "*shell*"))))
       (shell))
 
+    ;; ielm
+    (when (not (and
+                (get-process "ielm")
+              (bufferp (get-buffer "*ielm*"))))
+      (ielm))
+
     (cond
      ((= (prefix-numeric-value arg) 1)
       (setq bottom-window-buffer (get-buffer "*R*")))
 
      ((= (prefix-numeric-value arg) 2)
       (setq bottom-window-buffer (get-buffer "*shell*")))
+
+     ((= (prefix-numeric-value arg) 3)
+      (setq bottom-window-buffer (get-buffer "*ielm*")))
 
      (t
       (setq bottom-window-buffer (get-buffer "*Python*"))))
@@ -138,8 +147,29 @@ editing window.
       (comint-send-input))))
 
 
+(defun ielm-send-line (buf)
+  "Send the current line to a buffer"
+  (interactive)
+  (let ((shell-input (buffer-substring
+                      (line-beginning-position)
+                      (line-end-position))))
+    (with-current-buffer buf
+      (insert shell-input)
+      (ielm-send-input))))
 
-(defun send-line-R-python-shell ()
+
+(defun shell-buffer-update-dir-fun ()
+  "Keep the working dir of a shell script buffer in sync with the working dir of the shell process buffer."
+  (let ((current-buffer (current-buffer))
+        (working-dir)
+        (inhibit-message t))
+    (with-current-buffer "*shell*"
+      (setq working-dir (substring (pwd) 10)))
+    (set-buffer current-buffer)
+    (cd working-dir)))
+
+
+(defun send-line-R-python-shell-ielm ()
   "Send the current line to R, python, or shell based on context."
   (interactive)
 
@@ -157,21 +187,33 @@ editing window.
     (progn
       (comint-send-line (process-buffer (get-process "shell")))
       (shell-buffer-update-dir-fun)))
-   ))
+
+   ((or (eq major-mode 'lisp-interaction-mode)
+        (eq major-mode 'emacs-lisp-mode)
+        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+    (progn
+      (ielm-send-line (process-buffer (get-process "ielm")))
+   ))))
 
 
-(defun r-python-or-shell-send-region ()
+
+
+(defun r-python-shell-or-ielm-send-region ()
   "Send the current region to the R or python process depending on context."
   (interactive)
   (cond
+
+   ;; ess
    ((or (eq major-mode 'ess-mode)
         (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'bottom)))))
     (ess-eval-region-or-function-or-paragraph nil))
 
+   ;; python
    ((or (eq major-mode 'python-mode)
        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom)))))
     (elpy-shell-send-statement))
 
+   ;; shell
    ((or (eq major-mode 'sh-mode))
     (let ((shell-input (buffer-substring (point) (mark))))
       (with-current-buffer "*shell*"
@@ -182,21 +224,23 @@ editing window.
         (comint-send-input)
         )
       (shell-buffer-update-dir-fun)))
+
+   ;; ielm
+   ((or (eq major-mode 'lisp-interaction-mode)
+        (eq major-mode 'emacs-lisp-mode)
+        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+    (let ((ielm-input (progn (mark-sexp -1)
+                             (buffer-substring (point) (mark)))))
+      (with-current-buffer "*ielm*"
+        (insert ielm-input)
+        (ielm-send-input))
+      (deactivate-mark)))
+
    (t
-    (message "No R, python, or shell process for this buffer."))
+    (message "No R, python, shell, or ielm process for this buffer."))
    ))
 
 
-(defun shell-buffer-update-dir-fun ()
-  "Keep the working dir of a shell script buffer in sync with the working dir of the shell process buffer."
-  (let ((current-buffer (current-buffer))
-        (working-dir)
-        (inhibit-message t))
-    (with-current-buffer "*shell*"
-      (setq working-dir (substring (pwd) 10)))
-    (set-buffer current-buffer)
-    (cd working-dir)))
-  
 
 
 
