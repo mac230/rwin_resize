@@ -331,3 +331,39 @@ editing window.
   ))
 
 
+(defun mac-ess-mark-statement ()
+  "Mark a statement in R code so that the function name, not just the text bounded by parentheses, is grabbed."
+  (interactive)
+  (cond
+
+   ;; at the right parenthesis (statement end)
+   ((looking-back "\)" (- (point) 1) nil)
+    (progn
+      (set-mark (point))
+      (backward-sexp 2)))
+
+   ;; at the left parenthesis (statement beginning)
+   ((looking-at "\(")
+    (progn
+      (forward-sexp)
+      (set-mark (point))
+      (backward-sexp 2)))
+
+   ;; in the function name
+   ((looking-at "[a-zA-Z0-9._]+(")
+    (progn
+      (re-search-forward "\(" nil t 1)
+      (goto-char (match-beginning 0))
+      (forward-sexp)
+      (set-mark (point))
+      (backward-sexp 2)))
+
+   ;; inside the parens
+   (t
+    (progn
+      (re-search-backward "^[^=]+\\([a-zA-Z0-9._]\\)+\\((\\)" nil nil 1)
+      (goto-char (match-beginning 2))
+      (forward-sexp)
+      (set-mark (point))
+      (backward-sexp 2)))
+))
