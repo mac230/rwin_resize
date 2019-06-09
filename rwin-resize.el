@@ -1,7 +1,8 @@
 ;; rwin-resize     -*- mode: emacs-lisp; fill-column: 120; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*-
 
-;; my functions for setting up my emacs environment for working with R or
-;; python code using emacs as my ide
+;; my functions for setting up my emacs environment for working with R,
+;; python, elisp, and shell code using emacs as my ide.  sets up a
+;; REPL environment for each of the above languages
 
 (defun rwin-resize (arg)
 "Re-size windows to my preferred setup with an editing buffer at top left,
@@ -244,7 +245,6 @@ editing window.
 
 
 
-
 (defun mac-frame-width (arg)
   "Set frame width w/ custom input generated via data-entry-mode.
   [1] default - 215
@@ -367,3 +367,50 @@ editing window.
       (set-mark (point))
       (backward-sexp 2)))
 ))
+
+
+;; to make changes and have them take effect:
+;; 1. eval this w/ 'C-M-x' (eval-defun)
+;; 2. re-eval the minor-mode below
+;; 3. dis-able then re-enable the minor mode
+(defvar mc-r-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c k") 'r-python-shell-or-ielm-send-region)
+    (define-key map (kbd "C-c j") 'send-line-R-python-shell-ielm)
+    (define-key map (kbd "C-c l") 'mac-r-obj-send)
+    (define-key map (kbd "C-c c") 'goto-line)
+    (define-key map (kbd "C-w")   'kill-ring-save)
+    (define-key map (kbd "M-w")   'kill-region)
+    (define-key map (kbd "M-r")   'mac-ess-mark-statement)
+    (define-key map (kbd "C-c u") 'parenth-insert)
+    (define-key map (kbd "C-c r") 'copy-to-register)
+    (define-key map (kbd "C-c b") 'curly-bracket-insert)
+    (define-key map (kbd "C-c y") 'bookmark-jump)
+    (define-key map (kbd "C-c n") 'insert-register)
+    (define-key map (kbd "C-c w") 'mn-weather)
+    (define-key map (kbd "C-c 3") 'wc-region)
+    (define-key map (kbd "M-m") 'word-b-f)
+       map)
+   "Keymap for r commands.")
+
+
+(define-minor-mode mc-r-mode
+  "Different ESS eval commands for mc."
+  :init-value t
+  :lighter " mc-R-mode"
+  :keymap mc-r-map
+  :global t)
+
+
+(defun symbol-hydra-helper (arg)
+  "Helper function that allows deleting active regions."
+  (interactive)
+  (cond
+   ((and
+     (region-active-p)
+     (eq delete-selection-mode t))
+    (progn
+      (delete-region (point) (mark))
+      (insert arg)))
+   (t
+    (insert arg))))

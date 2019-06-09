@@ -122,12 +122,11 @@
 
 
 (defun mac-pdf-man-help-or-R-next-page ()
-  "Function to move to the previous page of a pdf or scroll an R or man page buffer when working in a separate, non-pdf buffer."
+  "Function to move to the next page of a pdf or scroll a help buffer down (R, python, man, etc...) when working in a separate, non-pdf buffer."
   (interactive)
-  "Scroll the help buffer I have open down using 'mac-pdf-man-R-or-help-scroll'."
   (mac-pdf-man-R-or-help-scroll 10))
 
 (defun mac-pdf-man-help-or-R-prev-page ()
+  "Function to move to the previous page of a pdf or scroll a help buffer up (R, python, man, etc...) when working in a separate, non-pdf buffer."
   (interactive)
-  "Scroll the help buffer I have open up using 'mac-pdf-man-R-or-help-scroll'."
   (mac-pdf-man-R-or-help-scroll -10))
