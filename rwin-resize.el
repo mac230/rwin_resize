@@ -215,7 +215,8 @@ editing window.
     (elpy-shell-send-statement))
 
    ;; shell
-   ((or (eq major-mode 'sh-mode))
+   ((or (eq major-mode 'sh-mode)
+        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom)))))
     (let ((shell-input (buffer-substring (point) (mark))))
       (with-current-buffer "*shell*"
         (insert shell-input)
