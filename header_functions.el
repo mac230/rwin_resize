@@ -241,8 +241,8 @@ Use w/ a hydra to rapidly and efficiently generate org-headings."
 
       ;; decrementing function
       (if (> 1 count)
-          (progn (capitalize-word 1) (forward-char 1) (setq p (point))) 
-        (progn (forward-word 1) (forward-char 1) (setq p (point))))
+          (progn (capitalize-word 1) (unless (eobp)) (forward-char 1) (setq p (point))) 
+        (progn (forward-word 1) (unless (eobp)) (forward-char 1) (setq p (point))))
       (setq count 0)
       )
     ))
