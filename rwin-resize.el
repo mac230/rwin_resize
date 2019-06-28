@@ -1,7 +1,7 @@
 ;; rwin-resize     -*- mode: emacs-lisp; fill-column: 120; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*-
 
 ;; my functions for setting up my emacs environment for working with R,
-;; python, elisp, and shell code using emacs as my ide.  sets up a
+;; python, elisp, shell code using emacs as my ide.  sets up a
 ;; REPL environment for each of the above languages
 
 (defun rwin-resize (arg)
@@ -21,8 +21,8 @@ so that only the top window is split to display help/man/R help buffers.  Most
 docs/forums recommend doing this w/ 'split-window-threshold', which doesn't work
 here because the width of the 3 windows is the same.
 
-As of 2019.05.25, now contains code for using R, python, and shell for the lower
-editing window.
+As of 2019.05.25, now contains code for using R, python, shell,
+and ielm for the lower editing window.
 "
   (interactive "P")
   ;; undo any existing window protections
@@ -260,8 +260,24 @@ editing window.
          (choice-menu '())
          (current-window (selected-window))
          (current-point (point))
-         (rwin-arg nil))
+         (rwin-arg nil)
+         (bottom-buffer (buffer-name (window-buffer (car (window-at-side-list nil 'bottom)))))
+         (pfix-arg)
+         )
 
+    ;; use this to preserve the buffer in the lower window by supplying it to rwin-resize at the end
+    (cond
+     ((string= bottom-buffer "*R*")
+      (setq pfix-arg 1))
+     ((string= bottom-buffer "*shell*")
+      (setq pfix-arg 2))
+     ((string= bottom-buffer "*ielm*")
+      (setq pfix-arg 3))
+     ((string= bottom-buffer "*Python*")
+      (setq pfix-arg 4))
+     (t
+      (setq pfix-arg 1)))
+    
     ;; 03.24.2019 - modification to account for window sizes
     ;; being preserved to prevent them from being split by 'rwin-resize'
     ;; this dolist macro undoes the protection, so now call 'rwin-resize'
@@ -328,8 +344,10 @@ editing window.
   (select-window current-window)
   (goto-char current-point)
   (message "")
-  (rwin-resize (prefix-numeric-value arg))
+  (rwin-resize pfix-arg)
   ))
+
+
 
 
 (defun mac-ess-mark-statement ()
@@ -395,12 +413,16 @@ editing window.
    "Keymap for r commands.")
 
 
+
+
 (define-minor-mode mc-r-mode
   "Different ESS eval commands for mc."
   :init-value t
   :lighter " mc-R-mode"
   :keymap mc-r-map
   :global t)
+
+
 
 
 (defun symbol-hydra-helper (arg)
@@ -415,3 +437,43 @@ editing window.
       (insert arg)))
    (t
     (insert arg))))
+
+
+;; 2019.06.28 - simplify as '(open-line)', '(delete-whitespace)' pieces weren't useful
+(defun sep-insert ()
+ "Insert \"-----\" and move to the next line.  I use this to demarcate separate ideas in my notes.
+Inserts this separator as a comment in R, python, and shell modes."
+ (interactive)
+ ;; go to the end of the indicated line, then search backward for non-whitespace text.
+ ;; this is the position the separator should be positioned relative to
+ ;; This way, the function works whether you remember to hit it when 
+ ;; you've accidentally used 'RET' to insert a newline.
+ (end-of-line)
+ (let ((start-point (1+ (line-beginning-position))))
+
+ ;; make sure we don't get an eobp error (common w/ narrowed buffer)   
+ (when (eobp)
+     (progn
+       (insert "\n")
+       (previous-line)))
+
+ ;; find text from the previous line that we'll position '-----' relative to
+ ;; go to the end of the line so you don't move any text down
+ (goto-char start-point)
+
+ ;; regex for non-greedy 0-n spaces, not space/tab/newline/line end (normal writing) or closing brackets (e.g., end of R for(i in) loop)
+ ;; this finds the text to insert the separator after
+ (unless
+     (not
+      (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t 1)))
+ (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
+
+ ;; always go to the end of the line so that the text on a line doesn't get broken
+ (end-of-line)
+
+ (if (or (eq major-mode 'ess-mode)
+         (eq major-mode 'python-mode)
+         (eq major-mode 'sh-mode))
+     (insert "\n\n\n## -----\n")
+   (insert "\n\n\n-----\n"))
+ ))
