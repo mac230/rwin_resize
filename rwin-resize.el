@@ -277,7 +277,7 @@ and ielm for the lower editing window.
       (setq pfix-arg 4))
      (t
       (setq pfix-arg 1)))
-    
+
     ;; 03.24.2019 - modification to account for window sizes
     ;; being preserved to prevent them from being split by 'rwin-resize'
     ;; this dolist macro undoes the protection, so now call 'rwin-resize'
@@ -446,12 +446,12 @@ Inserts this separator as a comment in R, python, and shell modes."
  (interactive)
  ;; go to the end of the indicated line, then search backward for non-whitespace text.
  ;; this is the position the separator should be positioned relative to
- ;; This way, the function works whether you remember to hit it when 
+ ;; This way, the function works whether you remember to hit it when
  ;; you've accidentally used 'RET' to insert a newline.
  (end-of-line)
  (let ((start-point (1+ (line-beginning-position))))
 
- ;; make sure we don't get an eobp error (common w/ narrowed buffer)   
+ ;; make sure we don't get an eobp error (common w/ narrowed buffer)
  (when (eobp)
      (progn
        (insert "\n")
@@ -463,17 +463,25 @@ Inserts this separator as a comment in R, python, and shell modes."
 
  ;; regex for non-greedy 0-n spaces, not space/tab/newline/line end (normal writing) or closing brackets (e.g., end of R for(i in) loop)
  ;; this finds the text to insert the separator after
- (unless
-     (not
+ (if (not
       (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t 1)))
- (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
+     (progn
+       (beginning-of-line)
+       (if (or (eq major-mode 'ess-mode)
+               (eq major-mode 'python-mode)
+               (eq major-mode 'sh-mode))
+           (insert "## -----\n")
+         (insert "-----\n")))
+   (progn
+     (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
 
- ;; always go to the end of the line so that the text on a line doesn't get broken
- (end-of-line)
+     ;; always go to the end of the line so that the text on a line doesn't get broken
+     (end-of-line)
 
- (if (or (eq major-mode 'ess-mode)
-         (eq major-mode 'python-mode)
-         (eq major-mode 'sh-mode))
-     (insert "\n\n\n## -----\n")
-   (insert "\n\n\n-----\n"))
+     (if (or (eq major-mode 'ess-mode)
+             (eq major-mode 'python-mode)
+             (eq major-mode 'sh-mode))
+         (insert "\n\n\n## -----\n")
+       (insert "\n\n\n-----\n"))
+     ))
  ))
