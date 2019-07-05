@@ -1,4 +1,4 @@
-;; rwin-resize     -*- mode: emacs-lisp; fill-column: 120; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*-
+;; rwin-resize     -*- mode: emacs-lisp; fill-column: 120; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*- 
 
 ;; my functions for setting up my emacs environment for working with R,
 ;; python, elisp, shell code using emacs as my ide.  sets up a
@@ -439,7 +439,7 @@ and ielm for the lower editing window.
     (insert arg))))
 
 
-;; 2019.06.28 - simplify as '(open-line)', '(delete-whitespace)' pieces weren't useful
+
 (defun sep-insert ()
  "Insert \"-----\" and move to the next line.  I use this to demarcate separate ideas in my notes.
 Inserts this separator as a comment in R, python, and shell modes."
@@ -449,7 +449,17 @@ Inserts this separator as a comment in R, python, and shell modes."
  ;; This way, the function works whether you remember to hit it when
  ;; you've accidentally used 'RET' to insert a newline.
  (end-of-line)
- (let ((start-point (1+ (line-beginning-position))))
+
+ (let ((fwd-bound (save-excursion (forward-line 3) (line-end-position)))
+       (sep))
+
+   ;; determine which separator to use based on major mode
+   (if (or
+        (eq major-mode 'ess-mode)
+        (eq major-mode 'python-mode)
+        (eq major-mode 'sh-mode))
+       (setq sep "## -----\n")
+     (setq sep "-----\n"))
 
  ;; make sure we don't get an eobp error (common w/ narrowed buffer)
  (when (eobp)
@@ -457,31 +467,116 @@ Inserts this separator as a comment in R, python, and shell modes."
        (insert "\n")
        (previous-line)))
 
- ;; find text from the previous line that we'll position '-----' relative to
- ;; go to the end of the line so you don't move any text down
- (goto-char start-point)
-
- ;; regex for non-greedy 0-n spaces, not space/tab/newline/line end (normal writing) or closing brackets (e.g., end of R for(i in) loop)
- ;; this finds the text to insert the separator after
- (if (not
-      (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t 1)))
-     (progn
-       (beginning-of-line)
-       (if (or (eq major-mode 'ess-mode)
-               (eq major-mode 'python-mode)
-               (eq major-mode 'sh-mode))
-           (insert "## -----\n")
-         (insert "-----\n")))
-   (progn
-     (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
-
      ;; always go to the end of the line so that the text on a line doesn't get broken
      (end-of-line)
+     (cond
 
-     (if (or (eq major-mode 'ess-mode)
-             (eq major-mode 'python-mode)
-             (eq major-mode 'sh-mode))
-         (insert "\n\n\n## -----\n")
-       (insert "\n\n\n-----\n"))
+      ;; 1 - at the beginning of a buffer -> don't insert newline above
+      ((or
+        (bobp)
+        (eq (line-number-at-pos) 1)
+        (not (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))))
+       (progn (beginning-of-line) (insert sep) (message "1!")))
+
+      ;; 2 - 2 blank lines present between paragraphs/blocks
+      ((and
+        (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
+        (save-excursion (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t)))
+       (progn (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
+              (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t) (beginning-of-line) (insert sep) (message "2!")))
+
+      ;; 3 - no blank lines
+      ((save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
+       (progn
+         (beginning-of-line)
+         (if (looking-at "\\( *\n\\|\n+ \\)")
+             (progn (insert (concat "\n\n" sep)) (message "3!"))
+           (progn (end-of-line) (insert (concat "\n\n\n" sep)) (message "3.5!")))))
+      )
      ))
- ))
+
+    
+
+(defun nssend-helper ()
+  "Helper function for \'nssned\'."
+  (interactive)
+  (let ((expr))
+
+  (progn
+    (push-mark (point) nil nil)
+    (re-search-backward "j" (line-beginning-position) t)
+    (replace-match "")
+    (setq expr (buffer-substring-no-properties (point) (mark)))
+
+    ;; eval in R; this way can check against calc ouput
+    (ess-send-string (ess-get-process) expr)
+    (exchange-point-and-mark) 
+
+    ;; eval in calc and insert the result
+    (insert (concat " = " (calc-eval expr) " "))
+    (end-of-line))))
+
+
+(defun nssend ()
+  "Function to quickly return the value of a calculation.  The function searches 
+backwards for a \'j\' character to mark the beginning of an expression then makes
+the region from the end of the line to the \'j\' the expression that is then 
+evaluated in calc and R.  Evaluation in both programs provides a means of 
+double-checking the results, since both R and calc have their idiosyncracies."
+  (interactive)
+  (let ((current-point (point)))
+
+    ;; contingency for R evaluation
+    (when (not ess-local-process-name)
+      (ess-switch-process))
+
+    ;; set the precision of the output we get from calc
+    (calc-precision 4)
+
+    ;; clean up any existing output, should it exist, and position point
+    (beginning-of-line)
+    (if (save-excursion (re-search-forward " += +.*$" (line-end-position) t))
+
+        (progn
+          (re-search-forward " += +.*$" (line-end-position) t)
+          (goto-char (match-beginning 0))
+          (push-mark)
+          (end-of-line)
+          (delete-region (point) (mark))
+          (setq current-point (line-end-position))
+          (goto-char current-point)
+          (message "1!"))
+
+      (progn
+        (goto-char current-point)
+
+        (cond
+         ((looking-at "[^ \n]")
+          (progn
+            (setq current-point (line-end-position))
+            (goto-char current-point)
+            (message "2!")))
+
+         ((looking-at "[[:space:]]+$")
+          (progn
+            (goto-char current-point)
+            (message "3!")))
+     )))
+    
+    ;; start by determining whether I've used 'j' to mark something for quick calculation
+    ;; if I have, give me the output immediately following the calculation
+    (cond
+
+     ;; condition where I have inserted a 'j'
+     ((save-excursion (re-search-backward "j" (line-beginning-position) t))
+      (nssend-helper))
+      
+     ;; no "j" inserted before expression
+     ((not (save-excursion (re-search-backward "j" (line-beginning-position) t)))
+      (avy--generic-jump "\(*[[:alnum:]]" nil (line-beginning-position) (line-end-position))
+      (insert "j")
+      (goto-char (1+ current-point))
+      (nssend-helper))
+
+     (t
+      (orelisp-eval)))))
