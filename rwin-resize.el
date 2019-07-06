@@ -1,4 +1,4 @@
-;; rwin-resize     -*- mode: emacs-lisp; fill-column: 120; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*- 
+;; rwin-resize     -*- mode: emacs-lisp; fill-column: 120; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*-
 
 ;; my functions for setting up my emacs environment for working with R,
 ;; python, elisp, shell code using emacs as my ide.  sets up a
@@ -195,8 +195,6 @@ and ielm for the lower editing window.
     (progn
       (ielm-send-line (process-buffer (get-process "ielm")))
    ))))
-
-
 
 
 (defun r-python-shell-or-ielm-send-region ()
@@ -488,6 +486,7 @@ Inserts this separator as a comment in R, python, and shell modes."
       ;; 3 - no blank lines
       ((save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
        (progn
+         (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
          (beginning-of-line)
          (if (looking-at "\\( *\n\\|\n+ \\)")
              (progn (insert (concat "\n\n" sep)) (message "3!"))
@@ -495,7 +494,7 @@ Inserts this separator as a comment in R, python, and shell modes."
       )
      ))
 
-    
+
 
 (defun nssend-helper ()
   "Helper function for \'nssned\'."
@@ -510,7 +509,7 @@ Inserts this separator as a comment in R, python, and shell modes."
 
     ;; eval in R; this way can check against calc ouput
     (ess-send-string (ess-get-process) expr)
-    (exchange-point-and-mark) 
+    (exchange-point-and-mark)
 
     ;; eval in calc and insert the result
     (insert (concat " = " (calc-eval expr) " "))
@@ -518,10 +517,10 @@ Inserts this separator as a comment in R, python, and shell modes."
 
 
 (defun nssend ()
-  "Function to quickly return the value of a calculation.  The function searches 
+  "Function to quickly return the value of a calculation.  The function searches
 backwards for a \'j\' character to mark the beginning of an expression then makes
-the region from the end of the line to the \'j\' the expression that is then 
-evaluated in calc and R.  Evaluation in both programs provides a means of 
+the region from the end of the line to the \'j\' the expression that is then
+evaluated in calc and R.  Evaluation in both programs provides a means of
 double-checking the results, since both R and calc have their idiosyncracies."
   (interactive)
   (let ((current-point (point)))
@@ -562,7 +561,7 @@ double-checking the results, since both R and calc have their idiosyncracies."
             (goto-char current-point)
             (message "3!")))
      )))
-    
+
     ;; start by determining whether I've used 'j' to mark something for quick calculation
     ;; if I have, give me the output immediately following the calculation
     (cond
@@ -570,13 +569,15 @@ double-checking the results, since both R and calc have their idiosyncracies."
      ;; condition where I have inserted a 'j'
      ((save-excursion (re-search-backward "j" (line-beginning-position) t))
       (nssend-helper))
-      
+
      ;; no "j" inserted before expression
      ((not (save-excursion (re-search-backward "j" (line-beginning-position) t)))
-      (avy--generic-jump "\(*[[:alnum:]]" nil (line-beginning-position) (line-end-position))
+      (avy--generic-jump "\(*[a-z0-9]" nil (line-beginning-position) (line-end-position))
       (insert "j")
       (goto-char (1+ current-point))
       (nssend-helper))
 
      (t
       (orelisp-eval)))))
+
+
