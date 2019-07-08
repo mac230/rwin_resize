@@ -472,12 +472,13 @@ Inserts this separator as a comment in R, python, and shell modes."
       ;; 1 - at the beginning of a buffer -> don't insert newline above
       ((or
         (bobp)
-        (eq (line-number-at-pos) 1)
+        (eq (line-number-at-pos) 1)              ;; regex for closest non-blank line
         (not (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))))
        (progn (beginning-of-line) (insert sep) (message "1!")))
 
       ;; 2 - 2 blank lines present between paragraphs/blocks
       ((and
+                                            ;; regex for closest non-blank line
         (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
         (save-excursion (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t)))
        (progn (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
@@ -487,10 +488,10 @@ Inserts this separator as a comment in R, python, and shell modes."
       ((save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
        (progn
          (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
-         (beginning-of-line)
+         (end-of-line)
          (if (looking-at "\\( *\n\\|\n+ \\)")
-             (progn (insert (concat "\n\n" sep)) (message "3!"))
-           (progn (end-of-line) (insert (concat "\n\n\n" sep)) (message "3.5!")))))
+             (progn (insert (concat "\n\n\n" (substring sep 0 (1- (length sep))))) (next-line) (beginning-of-line) (message "3!"))
+           (progn (end-of-line) (insert (concat "\n\n\n" sep)) (beginning-of-line) (message "3.5!")))))
       )
      ))
 
@@ -554,15 +555,28 @@ double-checking the results, since both R and calc have their idiosyncracies."
           (progn
             (setq current-point (line-end-position))
             (goto-char current-point)
+            (fixup-whitespace)
             (message "2!")))
 
          ((looking-at "[[:space:]]+$")
           (progn
             (goto-char current-point)
+            (end-of-line)
+            (fixup-whitespace)
             (message "3!")))
-     )))
 
-    ;; start by determining whether I've used 'j' to mark something for quick calculation
+         (t
+          (progn
+            (goto-char current-point)
+            (end-of-line)
+            (fixup-whitespace)
+            (message "4!")))
+         )))
+
+    (when (looking-at " ")
+      (delete-trailing-whitespace))
+
+    ;; determine whether I've used 'j' to mark something for quick calculation
     ;; if I have, give me the output immediately following the calculation
     (cond
 
@@ -574,7 +588,7 @@ double-checking the results, since both R and calc have their idiosyncracies."
      ((not (save-excursion (re-search-backward "j" (line-beginning-position) t)))
       (avy--generic-jump "\(*[a-z0-9]" nil (line-beginning-position) (line-end-position))
       (insert "j")
-      (goto-char (1+ current-point))
+      (end-of-line)
       (nssend-helper))
 
      (t
