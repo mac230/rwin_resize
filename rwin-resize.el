@@ -482,18 +482,38 @@ Inserts this separator as a comment in R, python, and shell modes."
         (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
         (save-excursion (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t)))
        (progn (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
-              (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t) (beginning-of-line) (insert sep) (message "2!")))
+                                 ;; regex for blank lines
+              (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t)
+              (beginning-of-line)
+              (insert sep)
+              (message "2!")))
 
-      ;; 3 - no blank lines
-      ((save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
+      ;; 3 - blank lines preceding point
+      ((and
+        (looking-back "^\\( *\n\\|\n+ \\)")
+        (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)))
        (progn
+         (push-mark)
          (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
          (end-of-line)
-         (if (looking-at "\\( *\n\\|\n+ \\)")
-             (progn (insert (concat "\n\n\n" (substring sep 0 (1- (length sep))))) (next-line) (beginning-of-line) (message "3!"))
-           (progn (end-of-line) (insert (concat "\n\n\n" sep)) (beginning-of-line) (message "3.5!")))))
+         (delete-region (point) (mark))
+         (insert (concat "\n\n\n" sep))
+         (beginning-of-line)
+         (message "3!")))
+
+      ;; 4 - no blank lines
+      ((save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
+       (progn
+         (push-mark)
+         (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
+         (end-of-line)
+         (delete-region (point) (mark))
+         (insert (concat "\n\n\n" sep))
+         (beginning-of-line)
+         (message "4!")))
       )
      ))
+
 
 
 
@@ -535,10 +555,10 @@ double-checking the results, since both R and calc have their idiosyncracies."
 
     ;; clean up any existing output, should it exist, and position point
     (beginning-of-line)
-    (if (save-excursion (re-search-forward " += +.*$" (line-end-position) t))
+    (if (save-excursion (re-search-forward " *= +.*$" (line-end-position) t))
 
         (progn
-          (re-search-forward " += +.*$" (line-end-position) t)
+          (re-search-forward " *= +.*$" (line-end-position) t)
           (goto-char (match-beginning 0))
           (push-mark)
           (end-of-line)
