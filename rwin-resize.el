@@ -606,7 +606,7 @@ double-checking the results, since both R and calc have their idiosyncracies."
 
      ;; no "j" inserted before expression
      ((not (save-excursion (re-search-backward "j" (line-beginning-position) t)))
-      (avy--generic-jump "\(*[a-z0-9]" nil (line-beginning-position) (line-end-position))
+      (avy--generic-jump "\(*[a-z0-9-]" nil (line-beginning-position) (line-end-position))
       (insert "j")
       (end-of-line)
       (nssend-helper))
