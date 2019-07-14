@@ -144,6 +144,8 @@ and ielm for the lower editing window.
                       (line-beginning-position)
                       (line-end-position))))
     (with-current-buffer buf
+      (when (not (eobp))
+        (end-of-buffer))
       (insert shell-input)
       (comint-send-input))))
 
@@ -155,6 +157,8 @@ and ielm for the lower editing window.
                       (line-beginning-position)
                       (line-end-position))))
     (with-current-buffer buf
+      (when (not (eobp))
+        (end-of-buffer))
       (insert shell-input)
       (ielm-send-input))))
 
@@ -217,6 +221,8 @@ and ielm for the lower editing window.
         (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom)))))
     (let ((shell-input (buffer-substring (point) (mark))))
       (with-current-buffer "*shell*"
+        (when (not (eobp))
+          (end-of-buffer))
         (insert shell-input)
         (comint-send-input)
         (sit-for 0.2)
@@ -232,6 +238,8 @@ and ielm for the lower editing window.
     (let ((ielm-input (progn (mark-sexp -1)
                              (buffer-substring (point) (mark)))))
       (with-current-buffer "*ielm*"
+        (when (not (eobp))
+          (end-of-buffer))
         (insert ielm-input)
         (ielm-send-input))
       (deactivate-mark)))
