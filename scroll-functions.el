@@ -124,9 +124,19 @@
 (defun mac-pdf-man-help-or-R-next-page ()
   "Function to move to the next page of a pdf or scroll a help buffer down (R, python, man, etc...) when working in a separate, non-pdf buffer."
   (interactive)
-  (mac-pdf-man-R-or-help-scroll 10))
+  (if (not
+       (eq
+        (window-buffer (car (window-at-side-list nil 'left)))
+        (window-buffer (car (window-at-side-list nil 'right)))))
+      (mac-pdf-man-R-or-help-scroll 10)
+    (funcall (lambda nil (interactive) (scroll-up-command (/ (window-height) 2)) (forward-line (/ (window-height) 2))))))
 
 (defun mac-pdf-man-help-or-R-prev-page ()
   "Function to move to the previous page of a pdf or scroll a help buffer up (R, python, man, etc...) when working in a separate, non-pdf buffer."
   (interactive)
-  (mac-pdf-man-R-or-help-scroll -10))
+  (if (not
+       (eq
+        (window-buffer (car (window-at-side-list nil 'left)))
+        (window-buffer (car (window-at-side-list nil 'right)))))
+  (mac-pdf-man-R-or-help-scroll -10)
+  (funcall (lambda nil (interactive) (scroll-down-command (/ (window-height) 2)) (forward-line (* -1 (/ (window-height) 2)))))))
