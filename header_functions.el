@@ -52,6 +52,9 @@
   (fixup-whitespace)
   (end-of-line)
   (delete-trailing-whitespace (line-beginning-position) (line-end-position))
+
+  (when (eobp)
+   (save-excursion (insert "\n")))
   
   (let ((p (line-beginning-position))
         (e (line-end-position))
@@ -117,6 +120,7 @@
   ;; control for situations where you create a heading at the end of the document
   (goto-char end)
   (end-of-line)
+ 
   (when (eobp)
       (progn
         (insert "\n")
