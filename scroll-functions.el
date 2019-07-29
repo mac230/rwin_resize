@@ -140,3 +140,37 @@
         (window-buffer (car (window-at-side-list nil 'right)))))
   (mac-pdf-man-R-or-help-scroll -10)
   (funcall (lambda nil (interactive) (scroll-down-command (/ (window-height) 2)) (forward-line (* -1 (/ (window-height) 2)))))))
+
+
+
+(defun mac-pdf-separate-window-goto-page ()
+  "Function to go to a specified page in a pdf document when working in a separate window."
+  (interactive)
+
+;; set up variables
+(let ((current-buffer (current-buffer))
+      (current-point (point))
+      (window-list (window-list))
+      (pdf)
+      (current-buffer (current-buffer))
+      )
+
+  ;; use dolist to find the pdf buffer
+  (dolist (buffer window-list)
+    (when (eq
+           (buffer-local-value 'major-mode (window-buffer buffer))
+           'pdf-view-mode)
+      (setq pdf (window-buffer buffer))
+      ))
+
+  (if pdf
+      (progn
+        ;; now switch to the pdf, go to the desired page, and return back to the buffer you're working in
+        (switch-to-buffer-other-window pdf)
+        (global-data-entry-mode 1)
+        (call-interactively 'pdf-view-goto-page)
+        (global-data-entry-mode -1)
+        (switch-to-buffer-other-window current-buffer)
+        (goto-char current-point))
+    (message "no pdf open!"))
+))

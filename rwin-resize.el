@@ -560,7 +560,7 @@ double-checking the results, since both R and calc have their idiosyncracies."
 
     ;; set the precision of the output we get from calc
     (calc-precision 4)
-
+    
     ;; clean up any existing output, should it exist, and position point
     (beginning-of-line)
     (if (save-excursion (re-search-forward " *= +.*$" (line-end-position) t))
@@ -614,7 +614,8 @@ double-checking the results, since both R and calc have their idiosyncracies."
 
      ;; no "j" inserted before expression
      ((not (save-excursion (re-search-backward "j" (line-beginning-position) t)))
-      (avy--generic-jump "\(*[a-z0-9-]" nil (line-beginning-position) (line-end-position))
+      (goto-char
+       (car (avy--generic-jump "\(*[a-z0-9-]" nil (line-beginning-position) (line-end-position))))
       (insert "j")
       (end-of-line)
       (nssend-helper))
