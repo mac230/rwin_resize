@@ -460,12 +460,20 @@ Inserts this separator as a comment in R, python, and shell modes."
        (sep))
 
    ;; determine which separator to use based on major mode
-   (if (or
+   (cond
+    ((or
         (eq major-mode 'ess-mode)
         (eq major-mode 'python-mode)
         (eq major-mode 'sh-mode))
-       (setq sep "## -----\n")
-     (setq sep "-----\n"))
+     (setq sep "## -----\n"))
+
+    ((or
+       (eq major-mode 'emacs-lisp-mode)
+       (eq major-mode 'lisp-interaction-mode))
+     (setq sep ";; -----\n"))
+
+    (t
+     (setq sep "-----\n")))
 
  ;; make sure we don't get an eobp error (common w/ narrowed buffer)
  (when (eobp)
@@ -560,7 +568,7 @@ double-checking the results, since both R and calc have their idiosyncracies."
 
     ;; set the precision of the output we get from calc
     (calc-precision 4)
-    
+
     ;; clean up any existing output, should it exist, and position point
     (beginning-of-line)
     (if (save-excursion (re-search-forward " *= +.*$" (line-end-position) t))
