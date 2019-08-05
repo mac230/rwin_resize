@@ -286,12 +286,18 @@ Setting these boundaries helps w/ positioning and renumbering."
     ;; regex to get through sublists
     (re-search-forward "\\(^ +\\+.*\n\\)+\\(^ .*\n\\)*" fwd-bound t))
 
-  (insert (concat "\n    - []~~\n"))
-  (list-line-adder)
+  (insert (concat "\n    - [] ~~\n"))
+  (setq fwd-bound (fwd-bound))
+  (goto-char fwd-bound)
+  (beginning-of-line)
   (list-line-remover)
+  (setq fwd-bound (fwd-bound))
+  (goto-char fwd-bound)
+  (beginning-of-line)
+  (list-line-adder)
   (end-of-buffer)
   (re-search-backward "~~" rev-bound t)
-  (replace-match " ")
+  (replace-match "")
   ))
 
 
