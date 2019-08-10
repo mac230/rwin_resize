@@ -539,6 +539,11 @@ how to insert the sublist."
    (t
     (message "not in a list, dummy!"))
    )
+  (insert "~~")
+  (list-line-remover)
+  (list-line-adder)
+  (re-search-forward "~~" nil t)
+  (replace-match "")
   )
 
 
