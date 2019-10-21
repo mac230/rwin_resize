@@ -15,10 +15,10 @@
 (defvar todo-regex "^ + - \\[[x]*\\]\\(.*:: \\)\\{0,1\\}"
   "regex for a todo list element; used to mark where sublists should go")
 
-(defvar sublist-column-regex "^ +\\+"
+(defvar sublist-column-regex "^ +[+*]"
   "regex used to determine the column to insert the next '+' char")
 
-(defvar sublist-regex "\\(\n\\)\\(^ +\\+.*\\)"
+(defvar sublist-regex "\\(\n\\)\\(^ +[+*].*\\)"
   "regex for a sublist element; used to mark where sublists should go")
 
 
@@ -56,6 +56,8 @@ Setting these boundaries helps w/ positioning and renumbering."
   (let* ((rev-bound (rev-bound))
          (fwd-bound (fwd-bound))
          (next-elt))
+
+    ;; start at list end; when no blank line after a list item, add one
     (goto-char fwd-bound)
     (beginning-of-line)
     (when
@@ -65,7 +67,7 @@ Setting these boundaries helps w/ positioning and renumbering."
           (save-excursion (previous-line 1) (line-beginning-position)) t))
         (open-line 1))
 
-    ;; search
+    ;; search backwards for list elements
     (setq next-elt
           (save-excursion
             (re-search-backward list-regex rev-bound t)))
@@ -423,10 +425,10 @@ For when calling at the end of a wrapped text sublist line w/ sublists."
 
     (when
         (save-excursion
-          (re-search-forward "\n +\\+" fwd-bound t))
+          (re-search-forward "\n +[+*]" fwd-bound t))
       (progn
         (setq next-sublist (save-excursion
-                             (re-search-forward "\n +\\+.*$" fwd-bound t)
+                             (re-search-forward "\n +[+*].*$" fwd-bound t)
                              (point)))))
 
     (cond
@@ -436,7 +438,7 @@ For when calling at the end of a wrapped text sublist line w/ sublists."
               (save-excursion
                 (re-search-forward sublist-column-regex next-sublist)
                 (1- (current-column))))
-        (re-search-forward "\n +\\+.*$" fwd-bound t)
+        (re-search-forward "\n +[+*].*$" fwd-bound t)
         (goto-char (match-beginning 0))
         (insert (concat "\n" (make-string curr-col #x20) "+ "))))
 
@@ -485,8 +487,8 @@ Inserts sub-lists at the end of sublists."
     (setq curr-col (current-column))
     (while
         (save-excursion
-          (re-search-forward "\\+" line-end t))
-      (re-search-forward "\\+" line-end t))
+          (re-search-forward "[+*]" line-end t))
+      (re-search-forward "[+*]" line-end t))
 
     ;; look for a blank line to insert after
     (if (save-excursion
@@ -511,31 +513,26 @@ Uses helper functions together w/ a cond function to decide
 how to insert the sublist."
   (interactive)
   (end-of-line)
-
   (cond
    ((looking-back (concat list-regex ".*") (line-beginning-position))
     (progn
       (l1-sublist)
       (message "l1")))
-
    ((and
      (looking-at (concat sublist-regex ".*"))
      (looking-back (concat sublist-regex ".*") (line-beginning-position)))
     (progn
       (l2-sublist)
       (message "l2")))
-
    ((looking-at "\\(\n +.*\\)+ +\\+")
     (progn
       (l3-sublist)
       (message "l3")))
-
    ((save-excursion
       (re-search-backward "\\(^ +\\+\\)*" nil t))
     (progn
       (l4-sublist)
       (message "l4")))
-
    (t
     (message "not in a list, dummy!"))
    )
@@ -549,7 +546,83 @@ how to insert the sublist."
 
 
 
+;; -----
+(defun mac-alt-sublist-indent ()
+  "Insert an alternative char '*' to denote separate sublist points."
+  (interactive)
+  (mac-sublist-indent)
+  (re-search-backward "\\+" (line-beginning-position) t)
+  (replace-match "* ")
+  (fixup-whitespace))
+
+
+
+  
+;; -----
+(defun mac-sub-sub-list ()
+"Insert a 'level 2' item beneath a sub-list point." 
+(interactive)
+(let ((fwd-bound (fwd-bound))
+      (rev-bound (rev-bound))
+      (column))
+  (end-of-line)
+
+  ;; contingency for no sublist item 
+  (unless
+      (not
+       (save-excursion 
+         (re-search-backward " +\\([+*]\\) " rev-bound t)))
+    
+    (progn 
+      (save-excursion 
+        (re-search-backward "^ +\\([+*]\\) " rev-bound t)
+        (goto-char (match-end 0))
+        (setq column (current-column)))
+      (end-of-line)
+      (insert (concat "\n" (make-string column #x20) "- "))))))
+
+
+
 
 ;; -----
+(defun mac-sub-sub-sub-list ()
+  "Insert a 'level 2' item beneath a sub-list point." 
+  (interactive)
+  (let ((fwd-bound (fwd-bound))
+        (rev-bound (rev-bound))
+        (column))
+    (end-of-line)
+
+    (setq rev-bound (save-excursion (re-search-backward list-regex rev-bound t) (end-of-line) (point)))
+
+    ;; contingency for no sublist item 
+    (unless
+        (not
+         (save-excursion 
+           (re-search-backward "^ +- " rev-bound t)))
+
+      (progn 
+        (save-excursion 
+          (re-search-backward "^ +- " rev-bound t)
+          (goto-char (match-end 0))
+          (setq column (current-column)))
+        (end-of-line)
+        (insert (concat "\n" (make-string column #x20) "> "))))))
+
+
+
+
+
+
+;; -----
+;; open up org-mode bindings for my use
+(define-key org-mode-map (kbd "C-c C-y") nil)
+(define-key org-mode-map (kbd "C-c C-k") nil)
+
 (global-set-key (kbd "C-c M-RET") 'mac-org-numbered-or-todo)
 (global-set-key (kbd "C-c C-j")   'mac-sublist-indent)
+(global-set-key (kbd "C-c C-k")   'mac-alt-sublist-indent)
+(global-set-key (kbd "C-c C-y")   'mac-sub-sub-list)
+(global-set-key (kbd "C-c C-7")   'mac-sub-sub-sub-list)
+
+
