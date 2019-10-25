@@ -112,6 +112,7 @@
   (org-table-goto-field "@2$2")
   (dotimes (var n-frags)
     (setq f-list (cons (read-string "fragment: ") f-list)))
+  (setq f-list (reverse f-list))
   (insert-rectangle f-list)
   (org-table-goto-field "@2$3")
   (org-ctrl-c-ctrl-c)
