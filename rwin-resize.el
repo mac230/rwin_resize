@@ -177,25 +177,29 @@ and ielm for the lower editing window.
 (defun send-line-R-python-shell-ielm ()
   "Send the current line to R, python, or shell based on context."
   (interactive)
-
+  ;; cond function determines which setup we're using
   (cond
    ((or (eq major-mode 'ess-mode)
-       (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+        (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'bottom))))
+        (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'right)))))
     (ess-eval-line))
 
    ((or (eq major-mode 'python-mode)
-       (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom))))
+        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'right)))))
     (comint-send-line (process-buffer (get-process "Python"))))
 
    ((or (eq major-mode 'shell-mode)
-       (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom))))
+        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'right)))))
     (progn
       (comint-send-line (process-buffer (get-process "shell")))
       (shell-buffer-update-dir-fun)))
 
    ((or (eq major-mode 'lisp-interaction-mode)
         (eq major-mode 'emacs-lisp-mode)
-        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'bottom))))
+        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'right)))))
     (progn
       (ielm-send-line (process-buffer (get-process "ielm")))
    ))))
@@ -208,17 +212,20 @@ and ielm for the lower editing window.
 
    ;; ess
    ((or (eq major-mode 'ess-mode)
-        (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+        (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'bottom))))
+        (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'right)))))
     (ess-eval-region-or-function-or-paragraph nil))
 
    ;; python
    ((or (eq major-mode 'python-mode)
-       (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom))))
+        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'right)))))
     (elpy-shell-send-statement))
 
    ;; shell
-   ((or (eq major-mode 'sh-mode)
-        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+   ((or (eq major-mode 'shell-mode)
+        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom))))
+        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'right)))))
     (let ((shell-input (buffer-substring (point) (mark))))
       (with-current-buffer "*shell*"
         (when (not (eobp))
@@ -234,7 +241,8 @@ and ielm for the lower editing window.
    ;; ielm
    ((or (eq major-mode 'lisp-interaction-mode)
         (eq major-mode 'emacs-lisp-mode)
-        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'bottom)))))
+        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'bottom))))
+        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'right)))))
     (let ((ielm-input (progn (mark-sexp -1)
                              (buffer-substring (point) (mark)))))
       (with-current-buffer "*ielm*"
@@ -401,7 +409,7 @@ and ielm for the lower editing window.
 (defvar mc-r-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c k") 'r-python-shell-or-ielm-send-region)
-    (define-key map (kbd "C-c j") 'send-line-R-python-shell-ielm)
+    (define-key map (kbd "C-j")   'send-line-R-python-shell-ielm)
     (define-key map (kbd "C-c l") 'mac-r-obj-send)
     (define-key map (kbd "C-c c") 'goto-line)
     (define-key map (kbd "C-w")   'kill-ring-save)
