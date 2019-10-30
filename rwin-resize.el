@@ -408,6 +408,7 @@ and ielm for the lower editing window.
 ;; 3. dis-able then re-enable the minor mode
 (defvar mc-r-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-\\")   'mac-info-other-window)
     (define-key map (kbd "C-c k") 'r-python-shell-or-ielm-send-region)
     (define-key map (kbd "C-j")   'send-line-R-python-shell-ielm)
     (define-key map (kbd "C-c l") 'mac-r-obj-send)
@@ -422,10 +423,9 @@ and ielm for the lower editing window.
     (define-key map (kbd "C-c n") 'insert-register)
     (define-key map (kbd "C-c w") 'mn-weather)
     (define-key map (kbd "C-c 3") 'wc-region)
-    (define-key map (kbd "M-m") 'word-b-f)
+    (define-key map (kbd "M-m")   'word-b-f)
        map)
    "Keymap for r commands.")
-
 
 
 
@@ -435,7 +435,6 @@ and ielm for the lower editing window.
   :lighter " mc-R-mode"
   :keymap mc-r-map
   :global t)
-
 
 
 
