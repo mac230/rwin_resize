@@ -553,7 +553,8 @@ how to insert the sublist."
   (mac-sublist-indent)
   (re-search-backward "\\+" (line-beginning-position) t)
   (replace-match "* ")
-  (fixup-whitespace))
+  (fixup-whitespace)
+  (insert " ")) 
 
 
 

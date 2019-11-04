@@ -13,9 +13,25 @@
        )))
   
 
-(defun mac-info-other-window ()
+(defun mac-prefix-arg-info-other-window-helper ()
+  "Function for repeatedly entering complex commands in info-mode buffers."
+  (with-current-buffer "*info*"
+    (let* ((key (read-key-sequence "input: "))
+           (fun (lookup-key Info-mode-map key)))
+      (while (commandp fun)
+        (progn 
+          (command-execute fun))
+        (set-window-point
+         (get-buffer-window)
+         (point-min))
+        (setq key (read-key-sequence "input: ")
+              fun (lookup-key Info-mode-map key)))
+      )))
+  
+
+(defun mac-info-other-window (arg)
   "Execute a command in the info mode buffer when it exists."
-  (interactive)
+  (interactive "p")
   (let ((win-list (window-list))
         (count 0))
     ;; determine if there's an info mode buffer 
@@ -26,12 +42,24 @@
                     (window-buffer win)
                   major-mode))
         (setq count (1+ count))))
-    (if (> count 0)
-        ;; have an Info-mode buffer - so get a command
-        (mac-info-other-window-helper)
-      ;; else clause; no info mode buffer - dummy 
+    (cond
+     ;; prefix arg and info mode buffer
+     ((and
+      (> count 0)
+      (not (= 1 (prefix-numeric-value arg))))
+      (mac-prefix-arg-info-other-window-helper))
+          
+     ;; no prefix arg and info mode buffer
+     ((and
+       (> count 0)
+       (= 1 (prefix-numeric-value arg)))
+      (mac-info-other-window-helper))
+     
+     ;; else clause; no info mode buffer - dummy
+     (t 
       (message "No Info-mode buffer in window."))
-    ))
+     )))
+
 
 
 (define-key mc-r-map (kbd "C-\\") 'mac-info-other-window)
