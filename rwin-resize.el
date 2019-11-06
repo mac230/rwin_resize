@@ -402,6 +402,7 @@ and ielm for the lower editing window.
 ))
 
 
+;; -----
 ;; to make changes and have them take effect:
 ;; 1. eval this w/ 'C-M-x' (eval-defun)
 ;; 2. re-eval the minor-mode below
@@ -431,11 +432,12 @@ and ielm for the lower editing window.
 
 (define-minor-mode mc-r-mode
   "Different ESS eval commands for mc."
-  :init-value t
   :lighter " mc-R-mode"
   :keymap mc-r-map
   :global t)
 
+
+(mc-r-mode 1)
 
 
 (defun symbol-hydra-helper (arg)
