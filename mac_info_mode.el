@@ -18,7 +18,9 @@
   (with-current-buffer "*info*"
     (let* ((key (read-key-sequence "input: "))
            (fun (lookup-key Info-mode-map key)))
-      (while (commandp fun)
+      (while (and
+              (commandp fun)
+              (not (string= " " key)))
         (progn 
           (command-execute fun))
         (set-window-point

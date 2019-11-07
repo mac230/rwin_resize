@@ -412,7 +412,7 @@ and ielm for the lower editing window.
     (define-key map (kbd "C-\\")   'mac-info-other-window)
     (define-key map (kbd "C-c k") 'r-python-shell-or-ielm-send-region)
     (define-key map (kbd "C-j")   'send-line-R-python-shell-ielm)
-    (define-key map (kbd "C-c l") 'mac-r-obj-send)
+    (define-key map (kbd "C-c l") 'r-object-send)
     (define-key map (kbd "C-c c") 'goto-line)
     (define-key map (kbd "C-w")   'kill-ring-save)
     (define-key map (kbd "M-w")   'kill-region)
@@ -732,3 +732,80 @@ This function can be debugged by commenting out the ibuffer line."
 
     ;; added so I don't have to think about this, but still regularly save my scratch buffer
     (persistent-scratch-save)))
+
+
+;; -----
+(defun r-object-send (arg)
+  "Send an object to the inferior R process to see what it looks like.  R functions for object 'x' information include:
+
+   [1] x          - input just the object
+   [2] str(x)     - get the structure of the object
+   [3] summary(x) - get summary statistic information on x
+   [4] class(x)   - get class information for x
+   [5] typeof(x)  - determine the type of an R object
+   [6] is.y(x)    - input 'y' (e.g., 'vector') to test if x is that type of object
+   [7] length(x)  - get the length of an object
+
+w/ prefix arg, read a string to be used for subsetting." 
+  (interactive "P")
+  ;; get in position to grab a variable name; use 'mark' as a boundary point
+  (beginning-of-line)
+  (forward-word)
+  (lispy-mark-symbol)
+  (let* ((object (buffer-substring-no-properties (mark) (point)))
+         (current-point (point))
+         (keys '("a" "s" "d" "f" "j" "h" "k"))
+         (keys-again keys)
+         (command '("" "str(" "summary(" "class(" "is." "typeof(" "length("))
+         (choice '("\n"))
+         (by "$")
+         (subset))
+    ;; use prefix argument to subset the object as desired
+    ;; input what subsetting you want via 'read-string'
+    (when (not (= (prefix-numeric-value arg) 1))
+      (setq subset (read-string "subset (e.g., $1, [1], etc...)")))
+    ;; set up choice 
+    (dotimes (n (length keys) choice)
+      (setq choice (cons (concat "\n                         " (nth n keys) ": " (nth n command)) choice)))
+    ;; ask which choice I want, then act accordingly
+    (let* ((my-choice (read-key-sequence (propertize
+                                (mapconcat 'identity choice "")
+                                'face 'mac-window-select-face)))
+           ;; return the position in the list that matches my choice above
+           ;; use this to concat from 'command'
+           (number (seq-position keys-again my-choice)))
+      ;; now send the desired input
+      ;; do this via 'cond' to get the desired result
+      (cond ((and
+              (= number 0)
+              (not subset))
+             (ess-send-string (ess-get-process)
+                           (concat (nth number command) object)
+                           'nowait))
+            ;; is.something() case
+            ((and
+              (= number 4)
+              (not subset))
+            (ess-send-string (ess-get-process)
+                             (concat "is." (read-string "is. what? (e.g., vector): ") "(" object ")")
+                             'nowait))
+            ;; all others w/ no prefix arg
+            ((not subset)
+             (ess-send-string (ess-get-process)
+                           (concat (nth number command) object ")")
+                           'nowait))
+            ;; is.something w/ subset
+            ((and subset
+                  (= number 4))
+             (ess-send-string (ess-get-process)
+                             (concat "is." (read-string "is. what? (e.g., vector): ") "(" object subset ")")
+                             'nowait))
+            ;; subset arg
+            (subset
+             (ess-send-string (ess-get-process)
+                           (concat (nth number command) object subset)
+                           'nowait)))
+          (deactivate-mark)
+        (message ""))))
+
+
