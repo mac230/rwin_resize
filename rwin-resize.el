@@ -474,12 +474,12 @@ Inserts this separator as a comment in R, python, and shell modes."
         (eq major-mode 'ess-mode)
         (eq major-mode 'python-mode)
         (eq major-mode 'sh-mode))
-     (setq sep "## -----\n"))
+     (setq sep "## -----\n## "))
 
     ((or
        (eq major-mode 'emacs-lisp-mode)
        (eq major-mode 'lisp-interaction-mode))
-     (setq sep ";; -----\n"))
+     (setq sep ";; -----\n;; "))
 
     (t
      (setq sep "-----\n")))
@@ -511,6 +511,7 @@ Inserts this separator as a comment in R, python, and shell modes."
               (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t)
               (beginning-of-line)
               (insert sep)
+              (end-of-line)
               (message "2!")))
 
       ;; 3 - blank lines preceding point
@@ -523,7 +524,7 @@ Inserts this separator as a comment in R, python, and shell modes."
          (end-of-line)
          (delete-region (point) (mark))
          (insert (concat "\n\n\n" sep))
-         (beginning-of-line)
+         (end-of-line)
          (message "3!")))
 
       ;; 4 - no blank lines
@@ -534,7 +535,7 @@ Inserts this separator as a comment in R, python, and shell modes."
          (end-of-line)
          (delete-region (point) (mark))
          (insert (concat "\n\n\n" sep))
-         (beginning-of-line)
+         (end-of-line)
          (message "4!")))
       )
      ))
@@ -809,3 +810,25 @@ w/ prefix arg, read a string to be used for subsetting."
         (message ""))))
 
 
+;; -----
+;; function for formatting my writing 
+(defun mac-writing-output ()
+  "Format my writing for insertion into ms-word."
+  (interactive)
+(progn
+  (get-buffer-create "*writing-output*")
+  (kill-ring-save (point) (mark) t)
+  (with-current-buffer "*writing_output*"
+    (yank)
+    (goto-char (point-min))
+    (while (re-search-forward "\\(.\\)\\(\n\\)" (point-max) t)
+      (replace-match " " nil nil nil 2))
+    (goto-char (point-min))
+    (while (and
+            (re-search-forward "\\. *\n" (point-max) t)
+            (< (point) (point-max)))
+        (insert "\n"))
+    )
+  (switch-to-buffer "*writing_output*")
+  )
+)
