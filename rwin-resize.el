@@ -816,7 +816,7 @@ w/ prefix arg, read a string to be used for subsetting."
   "Format my writing for insertion into ms-word."
   (interactive)
 (progn
-  (get-buffer-create "*writing-output*")
+  (get-buffer-create "*writing_output*")
   (kill-ring-save (point) (mark) t)
   (with-current-buffer "*writing_output*"
     (yank)
