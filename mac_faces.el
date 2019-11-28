@@ -1,5 +1,5 @@
 ;;;;;;;;;;
-;; face attributes - my personal settings
+;; face attributes - my personal face configuration
 ;; 2019.07.08 - started changing these, mainly to background = nil for using color themes
 
 ;; a useful function for determining whether or not a color exists is 'color-defined-p'
