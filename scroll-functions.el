@@ -174,3 +174,8 @@
         (goto-char current-point))
     (message "no pdf open!"))
 ))
+
+
+
+(global-set-key (kbd "M-SPC") 'mac-pdf-man-help-or-R-next-page)
+(global-set-key (kbd "M-t") 'mac-pdf-man-help-or-R-prev-page)
