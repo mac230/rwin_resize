@@ -1,5 +1,3 @@
-;; rwin-resize     -*- mode: emacs-lisp; fill-column: 120; eval: (elisp-org-hook); eval: (auto-fill-mode t) -*-
-
 ;; my functions for setting up my emacs environment for working with R,
 ;; python, elisp, shell code using emacs as my ide.  sets up a
 ;; REPL environment for each of the above languages
@@ -667,7 +665,7 @@ This function can be debugged by commenting out the ibuffer line."
     ;; set up a buffer to place time stamp information into; if it doesn't exist, make it; save it, then move into position
     (unless (bufferp (get-buffer "time_stamp.org"))
       (progn
-        (find-file "~/Desktop/emacs/time_stamp.org")
+        (find-file "~/emacs/time_stamp.org")
         (save-buffer)))
     (switch-to-buffer "time_stamp.org")
     (beginning-of-buffer)
@@ -689,7 +687,9 @@ This function can be debugged by commenting out the ibuffer line."
     (when
         (not
          (bufferp (get-buffer "*R*")))
-         (rstart))
+      (progn
+	(R)
+	(sit-for 3)))
     (with-current-buffer "*R*"
       (end-of-buffer)
       (comint-bol)       ;;The ESS equivalent of beginning-of-visual-line that leaves the prompt in place
