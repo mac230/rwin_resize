@@ -31,12 +31,14 @@ and ielm for the lower editing window.
         (select-window current-window t)
         (setq window-size-fixed nil)))
 
+  (window-configuration-to-register ?a)
   ;; start in the usual editing window; make that the reference point
   (select-window (car (window-at-side-list nil 'left)))
   (let ((current-window (selected-window))
         (current-buffer (current-buffer))
         (current-point (point))
-        (bottom-window-buffer))
+        (bottom-window-buffer)
+	(interval 0)) 
 
     ;; some contingencies to prevent issues w/ this when called from
     ;; R or RE-Builder
@@ -46,6 +48,12 @@ and ielm for the lower editing window.
               (eq current-buffer (get-buffer "*RE-Builder*")))
       (setq current-buffer (get-buffer "*Ibuffer*")))
 
+    (when (or
+	   (not (bufferp (get-buffer "*R*")))
+	   (not (bufferp (get-buffer "*shell*")))
+	   (not (bufferp (get-buffer "*Python*")))
+	   (not (bufferp (get-buffer "*ielm*"))))
+      (setq interval 3))
     ;; start by making sure we have the requisite buffers for R, RE-Builder, and python
     ;; 03.25.2019 - added function to change RE-Builder target buff and put point
     ;; back into the top window.
@@ -82,6 +90,11 @@ and ielm for the lower editing window.
                 (get-process "ielm")
               (bufferp (get-buffer "*ielm*"))))
       (ielm))
+
+    ;; sit while these set up, then restore window config
+    (sit-for interval)
+    (when (> interval 1)
+      (jump-to-register ?a))
 
     (cond
      ((= (prefix-numeric-value arg) 1)
