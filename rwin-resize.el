@@ -91,6 +91,11 @@ and ielm for the lower editing window.
               (bufferp (get-buffer "*ielm*"))))
       (ielm))
 
+    ;; calc
+    (when (not
+           (bufferp (get-buffer "*Calculator*")))
+      (calc))
+
     ;; sit while these set up, then restore window config
     (sit-for interval)
     (when (> interval 1)
