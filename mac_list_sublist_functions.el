@@ -9,10 +9,10 @@
 (defvar blank-line-regex "^ *\n"
   "regex for a blank line; used to remove blank lines or add as needed")
 
-(defvar list-regex "^ + - \\[[[:digit:]x]*\\] *\\(.*:: \\)\\{0,1\\}"
+(defvar list-regex "^ + - \\[[[:digit:]xX ]*\\] *\\(.*:: \\)\\{0,1\\}"
   "regex for a list element; used to mark where sublists should go")
 
-(defvar todo-regex "^ + - \\[[x]*\\]\\(.*:: \\)\\{0,1\\}"
+(defvar todo-regex "^ + - \\[[xX ]*\\]\\(.*:: \\)\\{0,1\\}"
   "regex for a todo list element; used to mark where sublists should go")
 
 (defvar sublist-column-regex "^ +[+*]"
@@ -288,7 +288,7 @@ Setting these boundaries helps w/ positioning and renumbering."
     ;; regex to get through sublists
     (re-search-forward "\\(^ +\\+.*\n\\)+\\(^ .*\n\\)*" fwd-bound t))
 
-  (insert (concat "\n    - [] ~~\n"))
+  (insert (concat "\n    - [ ] ~~\n"))
   (setq fwd-bound (fwd-bound))
   (goto-char fwd-bound)
   (beginning-of-line)
