@@ -262,7 +262,6 @@ Setting these boundaries helps w/ positioning and renumbering."
 
 
 
-
 ;; -----
 (defun mac-org-todo-list ()
 "Insert to-do lists in my preferred format."
@@ -307,9 +306,9 @@ Setting these boundaries helps w/ positioning and renumbering."
 
 
 ;; -----
-(defun mac-org-numbered-or-todo ()
+(defun mac-org-numbered-or-todo (arg)
   "Insert a todo or numbered list item depending on context."
-  (interactive)
+  (interactive "P")
   (let* ((current-point (point))
          (rev-bound (rev-bound))
          (fwd-bound (fwd-bound))
@@ -321,13 +320,17 @@ Setting these boundaries helps w/ positioning and renumbering."
             (re-search-backward todo-regex rev-bound t))))
 
     (cond
+     ;; in a todo list already
      ((or
        (save-excursion
          (re-search-forward todo-regex fwd-bound t))
        (save-excursion
          (re-search-backward todo-regex rev-bound t)))
       (mac-org-todo-list))
-
+     ;; prefix arg
+     ((not (= (prefix-numeric-value arg) 1))
+      (mac-org-todo-list))
+      ;; all other instances
      (t
       (mac-org-numbered-list)))))
 
