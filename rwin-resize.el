@@ -306,7 +306,7 @@ and ielm for the lower editing window.
      ((string= bottom-buffer "*Python*")
       (setq pfix-arg 4))
      (t
-      (setq pfix-arg 1)))
+      (setq pfix-arg 0)))
 
     ;; 03.24.2019 - modification to account for window sizes
     ;; being preserved to prevent them from being split by 'rwin-resize'
@@ -374,7 +374,9 @@ and ielm for the lower editing window.
   (select-window current-window)
   (goto-char current-point)
   (message "")
-  (rwin-resize pfix-arg)
+  ;; conditionally call rwin-resize if we're using a process buffer 
+  (when (> pfix-arg 0)
+    (rwin-resize pfix-arg))
   ))
 
 
