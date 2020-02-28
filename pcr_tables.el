@@ -30,7 +30,7 @@
     (insert "-\n| N | Fragment | OFA | Sequence | fwd/rev | T_a (°C) | T_ext (sec) | Prod. Size (bp) | yield (ng/μl)")
     (org-cycle)
     (goto-char (org-table-end))
-    (insert "#+TBLFM: $1 = @# - 1::$3 = OFA0::$5 = @# % 2 = 0 ? fwd : rev")
+    (insert "#+TBLFM: @# % 2 = 0 ? round((@# - 1)/2) : string("")::$3 = OFA0::$5 = @# % 2 = 0 ? fwd : rev")
     (org-ctrl-c-ctrl-c)
     (previous-line)
     (beginning-of-line)
