@@ -30,7 +30,7 @@
     (insert "-\n| N | Fragment | OFA | Sequence | fwd/rev | T_a (°C) | T_ext (sec) | Prod. Size (bp) | yield (ng/μl)")
     (org-cycle)
     (goto-char (org-table-end))
-    (insert "#+TBLFM: @# % 2 = 0 ? round((@# - 1)/2) : string("")::$3 = OFA0::$5 = @# % 2 = 0 ? fwd : rev")
+    (insert "#+TBLFM: $1 = @# % 2 = 0 ? round((@# - 1)/2) : string(\"\")::$3 = OFA0::$5 = @# % 2 = 0 ? fwd : rev")
     (org-ctrl-c-ctrl-c)
     (previous-line)
     (beginning-of-line)
@@ -63,19 +63,20 @@
   "Add horizontal lines to demarcate reactions in a PCR table"
   (let ((beg (org-table-begin))
         (end (org-table-end))
-        (count 0)
-        (curr-number))
+        (count 0))
     (goto-char beg)
     (while (and
             (< (point) end)
-            (< count (* 2 reactions)))
+            (< count (1- reactions)))
       (when      
           (re-search-forward "^| +[[:digit:]]\\{1,2\\}" end t)
-        (setq curr-number (number-at-point)
-              count (+ 1 count))
-        (when (= 0 (% curr-number 2))
-          (org-ctrl-c-ret)))
-      (setq end (save-excursion (goto-char (org-table-end)) (previous-line 3) (point)))
+        (progn
+          (next-line)
+          (org-ctrl-c-ret)
+          (previous-line))
+          (setq curr-number (number-at-point)
+                count (+ 1 count)
+                end (org-table-end)))
       (forward-char 1))
     ))
 
