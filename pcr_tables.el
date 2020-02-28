@@ -4,13 +4,12 @@
   "Insert and format a PCR reactions table."
   (interactive)
   (let* ((rxns (read-number "N. Reactions:"))
-         (tubes (* rxns 2))
          (r-count rxns)
          (fragments)
          (new-fragments '())
          (rows (format "%s" (+ 2 (* 2 rxns))))
          (ret-point))
-    (pcr-master-mix-table tubes)
+    (pcr-master-mix-table rxns)
     (insert (concat "\n\n\n#+NAME: " (format-time-string "%Y.%m.%d") "_PCR_reactions_table\n"))
     (org-table-create (concat "9x" rows))
     (org-table-analyze)
@@ -55,7 +54,6 @@
     (dolist (test fragments)
       (when (not (string= test ""))
         (setq new-fragments (cons test new-fragments))))
-    (pcr-tubes-table (reverse new-fragments))
     (goto-char ret-point)
     (org-cycle)))
 
