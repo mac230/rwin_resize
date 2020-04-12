@@ -2,6 +2,322 @@
 ;; python, elisp, shell code using emacs as my ide.  sets up a
 ;; REPL environment for each of the above languages
 
+
+;; -----
+;; miscellaneous helper functions and variable settings
+
+;; side-window deletion
+(defun mac-side-window-deleter ()
+  "Delete any existing side windows."
+  (dolist (w (window-list))
+    (when (window--side-window-p w)
+      (delete-side-window w)))
+  )
+
+;; helper function for selecting a process
+;; select a process buffer and place it
+(defun mac-process-placer (window)
+  "Select a process and place its buffer in the appropriate window."
+ (let* ((process-names '(R shell ielm Python))
+	(process-buf))
+   (ivy-read "process: " process-names
+	     :action
+	     (lambda (arg)
+	       (setq process-buf
+		     (process-buffer
+		      (get-process (format "%s" arg))))))
+   (window--display-buffer
+   process-buf
+   window
+   'reuse nil nil))
+ )
+
+;; necessary to keep R help from throwing an error
+(setq ess-help-pop-to-buffer nil)
+
+
+;; always display the backtrace buffer in the selected window
+;; makes it easier to kill it. 
+(defun mac-backtrace-buffer-display (buffer alist)
+  "My function for displaying the backtrace buffer."
+  (window--display-buffer
+   buffer
+   (selected-window)
+   'reuse alist nil))
+
+
+;; -----
+;; mac-window-config and help buffer display functions
+
+;; mac-window-config-1 - one window
+(defun mac-window-config-1 ()
+  "Basic window configuration; just one buffer."
+  (select-window (car (window-at-side-list nil 'left)))
+  (delete-other-windows)
+  (mac-side-window-deleter)  
+  ;; don't split into top bottom in this layout
+  (setq display-buffer-alist 
+      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*"
+	 (display-buffer-reuse-window
+	  mac-window-config-1-help-display
+	  display-buffer-pop-up-window
+	  ))
+	("*Backtrace*"
+	 (mac-backtrace-buffer-display)))
+      ;; n. columns to split into left/right
+      split-width-threshold 80
+      ;; n. lines to split into top/bottom
+      split-height-threshold nil))
+
+(defun mac-window-config-1-help-display (buffer alist)
+  (cond
+   ((> (length (window-list)) 1)
+    (window--display-buffer
+     buffer
+     (car (window-at-side-list nil 'right))
+     'reuse alist nil))
+    (t
+     (display-buffer-pop-up-window buffer alist))
+    ))
+
+
+;; -----
+;; mac-window-config-2 - pdf (right), notes/coding (left_top), process (left_bot)
+(defun mac-window-config-2-help-display (buffer alist)
+  (window--display-buffer
+   buffer
+   (car (window-at-side-list nil 'right))
+   'reuse alist nil)
+  )
+
+(defun mac-window-config-2 ()
+  "Window configuration with:
+  [1] notes/coding buffer (top_left)
+  [2] process (bottom_left)
+  [3] reading buffer (right)
+Requires a wide frame, so set frame width immediately."
+  (let ((proc-window))
+  (select-window (car (window-at-side-list nil 'left)))
+  (delete-other-windows-internal)
+  (mac-side-window-deleter)
+  (set-frame-width
+     ;; current frame
+     nil
+     (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))
+     ;; don't 'pretend' and set pixelwise
+     nil t)
+  (split-window-horizontally)
+;;  (display-buffer-in-side-window (current-buffer) '((side . right)))
+  (split-window-vertically -12)
+  (setq display-buffer-alist 
+      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*"
+	 (display-buffer-reuse-window
+	  mac-window-config-2-help-display))
+	("*Backtrace*"
+	 (mac-backtrace-buffer-display)))
+      ;; n. columns to split into left/right
+      split-width-threshold 80
+      ;; n. lines to split into top/bottom
+      split-height-threshold 40
+      proc-window (car (reverse (window-at-side-list nil 'left))))
+  (mac-process-placer proc-window)
+  ))
+;; (mac-window-config-2-help-display (get-buffer "*eshell*") nil)
+;; (mac-window-config-2)
+
+
+;; -----
+;; window config 3 - coding/notes (left); process (right)
+(defun mac-window-config-3-redisplay-helper (right-win right-buffer)
+  "Helper function for \'mac-window-config-3-help-display\'. "
+  (when
+      (= 1 (length (window-at-side-list nil 'right)))
+    (progn
+      (window--try-to-split-window right-win nil)
+      (window-resize right-win 10)))
+  (window--display-buffer
+   right-buffer
+   (car (reverse (window-at-side-list nil 'right)))
+   'reuse nil nil))
+
+
+
+(defun mac-window-config-3-help-display (buffer alist)
+  (let* ((win-return (lambda (side) (car (window-at-side-list nil side))))
+	 (right-win (funcall win-return 'right))
+         (left-win (funcall win-return 'left))
+	 (right-buffer (window-buffer right-win)))
+    ;; split windows if you only have 1 window in frame
+    (when (eq left-win right-win)
+      (split-window-horizontally))
+    ;; prefer process buffers for 'right-buffer'
+    (dolist (w (window-list))
+      (with-current-buffer (window-buffer w)
+	(when
+	    (or
+	     (eq major-mode 'inferior-ess-mode)
+	     (eq major-mode 'shell-mode)
+	     (eq major-mode 'inferior-emacs-lisp-mode)
+	     (eq major-mode 'inferior-python-mode)))
+	(setq right-buffer (window-buffer w))))
+    ;; display function
+    (window--display-buffer
+     buffer
+     right-win
+     'reuse alist nil)
+    (run-with-timer 0.25 nil 'mac-window-config-3-redisplay-helper right-win right-buffer)
+    ))
+
+
+(defun mac-window-config-3 ()
+  "Window configuration with: 
+   [1] a coding/notes buffer (left)
+   [2] a process buffer (right)."
+  (let ((proc-window))
+    (select-window (car (window-at-side-list nil 'left)))
+    (delete-other-windows-internal)
+    (set-frame-width
+     ;; current frame
+     nil
+     (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))
+     ;; don't 'pretend' and set pixelwise
+     nil t)
+    (split-window-horizontally)
+    (setq display-buffer-alist 
+	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*"
+	     (display-buffer-reuse-window
+	      mac-window-config-3-help-display))
+	    ("*Backtrace*"
+	 (mac-backtrace-buffer-display)))
+	  ;; n. columns to split into left/right
+	  split-width-threshold 80
+	  ;; n. lines to split into top/bottom
+	  split-height-threshold 20
+	  proc-window (car (window-at-side-list nil 'right)))
+    (mac-process-placer proc-window))
+  )
+
+;; (mac-window-config-3)
+;; (mac-window-config-3-help-display (get-buffer "*eshell*") nil)
+
+
+;; -----
+;; window config 4 - narrow frame with process on bottom
+(defun mac-window-config-4 ()
+  "Window configuration for a narrow(er) frame.  Has
+    [1] coding/notes (top)
+    [2] process (bottom)."
+  (let ((proc-window))
+    (select-window (car (window-at-side-list nil 'left)))
+    (delete-other-windows-internal)
+    (set-frame-width
+     nil
+     (round (* (nth 3 (assoc 'geometry (car (display-monitor-attributes-list)))) 0.55))
+     nil t)
+    (display-buffer-in-side-window
+     (current-buffer) '((side . bottom)))
+    (window-resize
+     (car (window-at-side-list nil 'bottom))
+     (- 12 (window-height (car (window-at-side-list nil 'bottom)))) nil)
+    (setq display-buffer-alist 
+	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*"
+	     (display-buffer-reuse-window
+	      mac-window-config-4-help-display))
+	    ("*Backtrace*"
+	 (mac-backtrace-buffer-display)))
+	  ;; n. columns to split into left/right
+	  split-width-threshold 80
+	  ;; n. lines to split into top/bottom
+	  split-height-threshold 100
+	  proc-window (car (reverse (window-at-side-list nil 'left))))
+    (mac-process-placer proc-window)))
+
+
+;; use the top left (editing) window, since the disp. is narrow
+(defun mac-window-config-4-help-display (buffer alist)
+  (window--display-buffer
+   buffer
+   (car (window-at-side-list nil 'left))
+   'reuse alist nil))
+
+;; (mac-window-config-4)
+;; (mac-window-config-4-help-display (get-buffer "*eshell*") nil)
+
+
+;; -----
+;; window config 5 - side x side windows; no process
+(defun mac-window-config-5 ()
+  "Window configuration with:
+  [1] notes/coding buffer (left)
+  [2] reading buffer (right)
+Requires a wide frame, so set frame width immediately."
+  (select-window (car (window-at-side-list nil 'left)))
+  (delete-other-windows-internal)
+  (mac-side-window-deleter)
+  (set-frame-width
+     ;; current frame
+     nil
+     (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))
+     ;; don't 'pretend' and set pixelwise
+     nil t)
+  (split-window-horizontally)
+  (setq display-buffer-alist 
+      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*"
+	 (display-buffer-reuse-window
+	  mac-window-config-5-help-display))
+	("*Backtrace*"
+	 (mac-backtrace-buffer-display)))
+      ;; n. columns to split into left/right
+      split-width-threshold 80
+      ;; n. lines to split into top/bottom
+      split-height-threshold 40
+      proc-window (car (reverse (window-at-side-list nil 'left))))
+  )
+
+
+(defun mac-window-config-5-help-display (buffer alist)
+  (when (eq
+	 (car (window-at-side-list nil 'left))
+	 (car (window-at-side-list nil 'right)))
+    (split-window-horizontally))
+  (window--display-buffer
+   buffer
+   (car (window-at-side-list nil 'right))
+   'reuse alist nil)
+  )
+
+;; (mac-window-config-5)
+;; (mac-window-config-5-help-display (get-buffer "*eshell*") nil)
+
+
+
+
+;; -----
+;; master function for calling a config
+(defun mac-select-window-config-master ()
+  "Master function for choosing a window configuration."
+  (interactive)
+  (global-data-entry-mode 1)
+  (let* ((config '("1" "2" "3" "4" "5"))
+	 (choice (string-to-number (ivy-read "choice: " config))))
+    (global-data-entry-mode -1)
+    (cond
+     ((= choice 1)
+      (mac-window-config-1))
+     ((= choice 2)
+      (mac-window-config-2))
+     ((= choice 3)
+      (mac-window-config-3))
+     ((= choice 4)
+      (mac-window-config-4))
+     ((= choice 5)
+      (mac-window-config-5))
+     (t
+      (mac-window-config-1))
+    )))
+
+(key-chord-define-global "jq" 'mac-select-window-config-master)
+
 (defun rwin-resize (arg)
 "Re-size windows to my preferred setup with an editing buffer at top left,
 RE-Builder in a very short middle window, and R in a short bottom window.
@@ -150,7 +466,47 @@ and ielm for the lower editing window.
     (select-window current-window)
     (goto-char current-point)))
 
-(key-chord-define-global "jq" 'rwin-resize)
+
+(defun mac-start-all-processes ()
+  "Start the various processes I interact w/ in REPL setup."
+  (let ((cb (current-buffer))
+	(process-names '(R shell ielm Python)))
+    (window-configuration-to-register ?a)
+
+    ;; remove processes already running from the list
+    (dolist (p process-names)
+      (when
+	  (get-process (format "%s" p))
+	(setq process-names (delq p process-names))))
+
+    ;; start any processes not already running
+    (while process-names
+      (cond
+       ((member 'R process-names)
+	(progn
+	  (R)
+	  (setq process-names (delq 'R process-names))))
+       ((member 'shell process-names)
+	(progn
+	  (shell)
+	  (setq process-names (delq 'shell process-names))))
+       ((member 'Python process-names)
+	(progn
+	  (run-python)
+	  (setq process-names (delq 'Python process-names))))
+       ((member 'ielm process-names)
+	(progn
+	  (ielm)
+	  (setq process-names (delq 'ielm process-names))))
+       (t
+	(setq process-names nil))))
+    (when (not (bufferp (get-buffer "*Calculator*")))
+      (calc))
+    (when (not (bufferp (get-buffer "*eshell*")))
+      (calc))
+    (sit-for 4)
+    (jump-to-register ?a))
+  )
 
 
 (defun comint-send-line (buf)
@@ -191,86 +547,73 @@ and ielm for the lower editing window.
 
 
 (defun send-line-R-python-shell-ielm ()
-  "Send the current line to R, python, or shell based on context."
+  "Send the current line to R, shell, ielm, or python based on context."
   (interactive)
-  ;; cond function determines which setup we're using
-  (cond
-   ((or (eq major-mode 'ess-mode)
-        (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'bottom))))
-        (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'right)))))
-    (ess-eval-line))
-
-   ((or (eq major-mode 'python-mode)
-        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom))))
-        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'right)))))
-    (comint-send-line (process-buffer (get-process "Python"))))
-
-   ((or (eq major-mode 'shell-mode)
-        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom))))
-        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'right)))))
-    (progn
-      (comint-send-line (process-buffer (get-process "shell")))
-      (shell-buffer-update-dir-fun)))
-
-   ((or (eq major-mode 'lisp-interaction-mode)
-        (eq major-mode 'emacs-lisp-mode)
-        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'bottom))))
-        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'right)))))
-    (progn
-      (ielm-send-line (process-buffer (get-process "ielm")))
-   ))))
+  (let* ((w (window-list))
+	 (modes-fun (lambda (arg)
+		      (with-current-buffer (window-buffer arg)
+			major-mode)))
+	 (modes (map 'list modes-fun w)))
+    (cond
+     ((member 'inferior-ess-mode modes)
+      (ess-eval-line))
+     ((member 'shell-mode modes)
+      (progn
+	(comint-send-line
+	 (process-buffer (get-process "shell")))
+	(shell-buffer-update-dir-fun)))
+     ((member 'inferior-emacs-lisp-mode modes)
+      (ielm-send-line
+       (process-buffer (get-process "ielm"))))
+     ((member 'inferior-python-mode modes)
+      (comint-send-line (process-buffer (get-process "Python"))))
+     (t
+      (message "No process buffer to send input to in window list")))
+     )
+  )
 
 
 (defun r-python-shell-or-ielm-send-region ()
-  "Send the current region to the R or python process depending on context."
+  "Send the current line to R, shell, ielm, or python based on context."
   (interactive)
-  (cond
-
-   ;; ess
-   ((or (eq major-mode 'ess-mode)
-        (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'bottom))))
-        (eq (get-buffer "*R*") (window-buffer (car (window-at-side-list nil 'right)))))
-    (ess-eval-region-or-function-or-paragraph nil))
-
-   ;; python
-   ((or (eq major-mode 'python-mode)
-        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'bottom))))
-        (eq (get-buffer "*Python*") (window-buffer (car (window-at-side-list nil 'right)))))
-    (elpy-shell-send-statement))
-
-   ;; shell
-   ((or (eq major-mode 'shell-mode)
-        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'bottom))))
-        (eq (get-buffer "*shell*") (window-buffer (car (window-at-side-list nil 'right)))))
-    (let ((shell-input (buffer-substring (point) (mark))))
-      (with-current-buffer "*shell*"
-        (when (not (eobp))
-          (end-of-buffer))
-        (insert shell-input)
-        (comint-send-input)
-        (sit-for 0.2)
-        ;; deal w/ the duplicating prompt effects of sending a region
-        (comint-send-input)
-        )
-      (shell-buffer-update-dir-fun)))
-
-   ;; ielm
-   ((or (eq major-mode 'lisp-interaction-mode)
-        (eq major-mode 'emacs-lisp-mode)
-        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'bottom))))
-        (eq (get-buffer "*ielm*") (window-buffer (car (window-at-side-list nil 'right)))))
-    (let ((ielm-input (progn (mark-sexp -1)
-                             (buffer-substring (point) (mark)))))
-      (with-current-buffer "*ielm*"
-        (when (not (eobp))
-          (end-of-buffer))
-        (insert ielm-input)
-        (ielm-send-input))
-      (deactivate-mark)))
-
-   (t
-    (message "No R, python, shell, or ielm process for this buffer."))
-   ))
+  (let* ((w (window-list))
+	 (modes-fun (lambda (arg)
+		      (with-current-buffer (window-buffer arg)
+			major-mode)))
+	 (modes (map 'list modes-fun w)))
+    (cond
+     ;; ESS 
+     ((member 'inferior-ess-mode modes)
+      (ess-eval-region-or-function-or-paragraph nil))
+     ;; shell
+     ((member 'shell-mode modes)
+      (let ((shell-input (buffer-substring (point) (mark))))
+	(with-current-buffer "*shell*"
+	  (when (not (eobp))
+	    (end-of-buffer))
+	  (insert shell-input)
+	  (comint-send-input)
+	  (sit-for 0.2)
+	  ;; deal w/ the duplicating prompt effects of sending a region
+	  (comint-send-input)
+	  )
+	(shell-buffer-update-dir-fun)))
+      ;; ielm
+     ((member 'inferior-emacs-lisp-mode modes)
+      (let ((ielm-input (progn (mark-sexp -1)
+			       (buffer-substring (point) (mark)))))
+	(with-current-buffer "*ielm*"
+	  (when (not (eobp))
+	    (end-of-buffer))
+	  (insert ielm-input)
+	  (ielm-send-input))
+	(deactivate-mark)))
+      ((member 'inferior-python-mode modes)
+       (elpy-shell-send-statement))
+     (t
+      (message "No process buffer to send input to in window list")))
+     )
+  )
 
 
 
@@ -852,3 +1195,52 @@ w/ prefix arg, read a string to be used for subsetting."
   (switch-to-buffer "*writing_output*")
   )
 )
+
+
+;; -----
+;; re-builder toggle function
+(defun re-builder-toggle ()
+  "Display or remove the disaply of the re-builder based on context."
+  (interactive)  
+  ;; contingency if RE-Builder inactive
+  (when (not (get-buffer "*RE-Builder*"))
+    (progn
+      (re-builder)
+      (reb-change-target-buffer current-buffer)))
+
+  ;; determine whether RE-Builder has a window or not
+  (let ((status 0)
+	(rb-window))
+    (dolist (w (window-list))
+      (with-current-buffer (window-buffer w)
+	(when (eq major-mode 'reb-mode)
+	  (setq status (1+ status)
+		rb-window (get-buffer-window)))))
+
+    (cond
+     ;; if it has a window, delete the window
+     ((> status 0)
+      (delete-window rb-window))
+     ;; if no window, give it a window
+     (t
+      (progn
+	(select-window (car (window-at-side-list nil 'left)))
+	(display-buffer
+	 "*RE-Builder*"
+	 '((display-buffer-reuse-window
+	    display-buffer-below-selected)
+	   (window-height . 5)))))))
+  )
+
+
+(defun mac-window-config-3 ()
+  "Window configuration with a coding buffer at left and a process buffer at right."
+  (select-window (car (window-at-side-list nil 'left)))
+  (delete-other-windows-internal)
+  (set-frame-width
+     ;; current frame
+     nil
+     (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))
+     ;; don't 'pretend' and set pixelwise
+     nil t)
+  (split-window-horizontally))
