@@ -16,22 +16,23 @@
          (current-buffer (current-buffer))
          (scroll-error-top-bottom t)
          (scroll-fun
-          (lambda (doc-buf) (progn
-                              (switch-to-buffer-other-window doc-buf)
-                              (when (bobp) (scroll-up-command 1))
-                              (when (eobp) (previous-line 1))
-                              (scroll-up-command val)
-                              (switch-to-buffer-other-window current-buffer)
-                              (goto-char current-point))))
+          (lambda (doc-buf)
+	    (progn
+	      (switch-to-buffer-other-window doc-buf)
+	      (when (bobp) (scroll-up-command 1))
+	      (when (eobp) (previous-line 1))
+	      (scroll-up-command val)
+	      (switch-to-buffer-other-window current-buffer)
+	      (goto-char current-point))))
          (pdf-scroll-fun
           (lambda ()
-            (switch-to-buffer-other-window pdf)
-            (setq val (/ val (abs val)))
-            (unless (or
-                     (< (+ val (pdf-view-current-page)) 1)
-                     (> (+ val (pdf-view-current-page)) (pdf-cache-number-of-pages)))
-                     (pdf-view-next-page-command val))
-            (switch-to-buffer-other-window current-buffer)
+	    (switch-to-buffer-other-window pdf)
+	    (setq val (/ val (abs val)))
+	    (unless (or
+		     (< (+ val (pdf-view-current-page)) 1)
+		     (> (+ val (pdf-view-current-page)) (pdf-cache-number-of-pages)))
+	      (pdf-view-next-page-command val))
+	    (switch-to-buffer-other-window current-buffer)
             (goto-char current-point)))
          )
 

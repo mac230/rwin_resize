@@ -1005,26 +1005,38 @@ double-checking the results, since both R and calc have their idiosyncracies."
 
 
 
-(defun pmdr-timer (min)
+(defun pmdr-timer (ptime min)
   "Function I use to track my time throughout the day.  This creates a buffer to dump time stamp information into and messages the timer information as well. 
 This function can be debugged by commenting out the ibuffer line."
-  (interactive "sEnter Time (minutes):")
+  (interactive "pProblem time\nsEnter Time (minutes): ")
   (let* ((curr-buff (current-buffer))
-
          ;; date-head denotes the header I create for each day
          (date-head (format-time-string "\/%m.%d.%Y\/"))
-         
          ;; date line denotes a time string that is inserted when this function is called
          ;; I'll search backward for the most recent version of this to place time stamps sequentially
          (date-line (concat ", " (format-time-string "%m.%d.%Y")))
          (this-year (concat "* " (format-time-string "%Y") "\n")))
-         
+    ;; use 'cond' function to determine if I set aside time for specific problems 
+    (cond
+     ((= (prefix-numeric-value ptime) 1)
+      (setq ptime nil))
+     ((= (prefix-numeric-value ptime) 4)
+      (setq ptime "10"))
+     ((and
+       (not (= (prefix-numeric-value ptime) 4))
+       (not (= (prefix-numeric-value ptime) 1)))
+      (setq ptime (format "%s" ptime)))
+     (t
+      (setq ptime nil)))
     ;; use window-configuration-to-register to restore the window setup when all the time information is taken care of
     (window-configuration-to-register #x7a)
-
     ;; call ibuffer to signal the timer going off
+    (when ptime
+      (run-at-time
+       (concat ptime " min")
+       nil 'switch-to-buffer
+       (get-buffer-create "*scratch*")))
     (run-at-time (concat min " min") nil 'ibuffer)
-    
     ;; set up a buffer to place time stamp information into; if it doesn't exist, make it; save it, then move into position
     (unless (bufferp (get-buffer "time_stamp.org"))
       (progn
@@ -1032,20 +1044,17 @@ This function can be debugged by commenting out the ibuffer line."
         (save-buffer)))
     (switch-to-buffer "time_stamp.org")
     (beginning-of-buffer)
-
     ;; when expression to insert the year as an org-mode level 1 header if it's not there
     (when (not (re-search-forward (concat "* " (format-time-string "%Y") "\n") nil t))  
       (re-search-backward "-\\*-" nil t)
       (end-of-line)
       (insert (concat "\n\n" this-year)))
-
     ;; when expression to insert the day's date HEADER if it's not there
     (when (not (re-search-forward (concat date-head "\n" "------------\n") nil t))
       (progn
         (beginning-of-buffer)
         (re-search-forward this-year nil t)
         (insert (concat "\n------------\n" date-head "\n" "------------\n\n"))))
-  
     ;; insert the timer information into R for easy visualization
     (when
         (not
@@ -1059,7 +1068,6 @@ This function can be debugged by commenting out the ibuffer line."
       (kill-visual-line)
       (insert (concat "time = '" min "  min, " (format-time-string " %H:%M:%S %p,  %m.%d.%Y") "'"))
       (inferior-ess-send-input))
-
     ;; return to the buffer of interest, then switch to 'time_stamp.org' and get into position
     (switch-to-buffer "time_stamp.org")
     (end-of-buffer)
@@ -1069,33 +1077,45 @@ This function can be debugged by commenting out the ibuffer line."
         (beginning-of-line)
         (insert "* Backups\n\n")))
     (re-search-backward "\* Backups" nil t)
-
     ;; cond function to either insert the date if it's not there already or just insert the timer information if the date header is there
     ;; start w/ searching for the date line, indicating a previous call of a timer.  The new timer should go below this
     (cond
      ((re-search-backward date-line nil t)
-      (progn (end-of-line)
-             (insert (concat "\n" min " min. at " (format-time-string "%H:%M:%S %p, %m.%d.%Y")))))
-
+      (progn
+	(end-of-line)
+	(insert
+	 (concat "\n" min " min. at " (format-time-string "%H:%M:%S %p, %m.%d.%Y")))))
      ;; if no date line is there (i.e., haven't called the func yet today), we need to search backwards for the date header
      ((re-search-backward (concat (format-time-string "%m.%d.%Y") "/\n-+\n") nil t)
       (progn (re-search-forward (concat (format-time-string "%m.%d.%Y") "/\n-+\n") nil t)
              (insert (concat min " min. at " (format-time-string "%H:%M:%S %p, %m.%d.%Y"))))))
-
     ;; save the buffer so I don't have to save it when I call 'save-some-buffers'
     (set-buffer "time_stamp.org")
     (save-buffer)
-
     ;; set this variable for 'dt' function that tells me the time and most recent timer
     (setq most-recent-timer (concat (format-time-string "%H:%M:%S %p") ", " min " min."))
-
     ;; wrap up timer stuff by displaying timer information in the minibuffer and restoring the window configuration
     (message "%s min. at %s" min (format-time-string "%H:%M:%S %p %m.%d.%Y"))
     (jump-to-register #x7a)
     (switch-to-buffer curr-buff)
-
     ;; added so I don't have to think about this, but still regularly save my scratch buffer
     (persistent-scratch-save)))
+
+;; helper functions
+(defun pmdr-40-10 (ptime)
+  "Pomodoro timer with 40 minutes total, 10 minutes of problem solving."
+  (interactive "p")
+  (pmdr-timer (prefix-numeric-value ptime) "40"))
+
+(defun pmdr-50-0 (ptime)
+  "Pomodoro timer with 50 minutes total, no problem solving."
+  (interactive "p")
+  (pmdr-timer (prefix-numeric-value ptime) "50"))
+
+(defun pmdr-35-0 (ptime)
+  "Pomodoro timer with 50 minutes total, no problem solving."
+  (interactive "p")
+  (pmdr-timer (prefix-numeric-value ptime) "35"))
 
 
 ;; -----
@@ -1233,14 +1253,4 @@ w/ prefix arg, read a string to be used for subsetting."
   )
 
 
-(defun mac-window-config-3 ()
-  "Window configuration with a coding buffer at left and a process buffer at right."
-  (select-window (car (window-at-side-list nil 'left)))
-  (delete-other-windows-internal)
-  (set-frame-width
-     ;; current frame
-     nil
-     (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))
-     ;; don't 'pretend' and set pixelwise
-     nil t)
-  (split-window-horizontally))
+
