@@ -210,9 +210,11 @@ Requires a wide frame, so set frame width immediately."
   (let ((proc-window))
     (select-window (car (window-at-side-list nil 'left)))
     (delete-other-windows-internal)
-    (set-frame-width
-     nil
-     (round (* (nth 3 (assoc 'geometry (car (display-monitor-attributes-list)))) 0.55))
+    ;; for now don't want to set frame width
+    ;; can revisit later
+    ;;    (set-frame-width
+    ;;     nil
+    ;;     (round (* (nth 3 (assoc 'geometry (car (display-monitor-attributes-list)))) 0.55))
      nil t)
     (display-buffer-in-side-window
      (current-buffer) '((side . bottom)))
@@ -629,12 +631,15 @@ and ielm for the lower editing window.
   (interactive "P")
   (let* ((keys '("a" "f" "j" "c"))
          (keys-again keys)
-         (options '("default (215)" "full (364)" "mid (280)" "custom"))
+         (options '("default - 0.6" "full - 1.0" "mid - 0.5" "custom"))
          (choice-menu '())
          (current-window (selected-window))
          (current-point (point))
          (rwin-arg nil)
-         (bottom-buffer (buffer-name (window-buffer (car (window-at-side-list nil 'bottom)))))
+         (bottom-buffer
+	  (buffer-name
+	   (window-buffer
+	    (car (window-at-side-list nil 'bottom)))))
          (pfix-arg)
          )
 
@@ -666,7 +671,6 @@ and ielm for the lower editing window.
     (setq choice-menu
           (cons
            (concat
-            "\n"
             "                                  "
             (car keys)
             ": "
@@ -684,42 +688,56 @@ and ielm for the lower editing window.
             (seq-position keys-again choice)))
 
   ;; 'cond' function to set frame width; uses position in list of your choice
-  (cond
-   ((= new-width 0)
-    (set-frame-width
-     ;; current frame
-     nil
-     ;; 0.6 * max width
-     ;; truncate converts to integer by rounding to 0
-     (truncate (* (float 0.6) (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
-     ;; don't 'pretend' and set pixelwise
-     nil t))
-   ((= new-width 1)
-    (set-frame-width nil
-     (truncate (nth 3 (assoc 'geometry (car (display-monitor-attributes-list)))))
-     nil t))
-   ((= new-width 2)
-    (set-frame-width nil
-     (truncate (* (float 0.75) (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
-     nil t))
-   ((= new-width 3)
-    (progn
-      (global-data-entry-mode)
-      (set-frame-width nil
-       (truncate (* (float (read-number "fractional width: ")) (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
-       nil t)
-      (global-data-entry-mode -1)))
-   (t
-    (set-frame-width nil
-     (truncate (* (float 0.6) (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
-     nil t))
-                     ))
+      (cond
+       ;; 0.6 width
+       ((= new-width 0)
+	(set-frame-width
+	 ;; current frame
+	 nil
+	 ;; 0.55 * max width
+	 ;; truncate converts to integer by rounding to 0
+	 (truncate
+	  (* (float 0.55)
+	     (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
+	 ;; don't 'pretend' and set pixelwise
+	 nil t))
+       ;; 1.0 (full) width
+       ((= new-width 1)
+	(set-frame-width
+	 nil
+	 (truncate (nth 3 (assoc 'geometry (car (display-monitor-attributes-list)))))
+	 nil t))
+       ;; 0.5 width
+       ((= new-width 2)
+	(set-frame-width
+	 nil
+	 (truncate
+	  (* (float 0.5)
+	     (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
+			 nil t))
+       ((= new-width 3)
+	(progn
+	  (global-data-entry-mode)
+	  (set-frame-width
+	   nil (truncate
+		(* (float (read-number "fractional width: "))
+		   (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
+			   nil t)
+	  (global-data-entry-mode -1)))
+       (t
+	(set-frame-width
+	 nil
+	 (truncate (* (float 0.55)
+		      (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
+			 nil t))
+       ))
   (select-window current-window)
   (goto-char current-point)
   (message "")
+  ;; 2020.04.30 shouldn't need this any longer 
   ;; conditionally call rwin-resize if we're using a process buffer 
-  (when (> pfix-arg 0)
-    (rwin-resize pfix-arg))
+  ;;  (when (> pfix-arg 0)
+  ;;    (rwin-resize pfix-arg))
   ))
 
 
