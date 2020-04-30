@@ -631,7 +631,7 @@ and ielm for the lower editing window.
   (interactive "P")
   (let* ((keys '("a" "f" "j" "c"))
          (keys-again keys)
-         (options '("default - 0.6" "full - 1.0" "mid - 0.5" "custom"))
+         (options '("default - 0.55" "full - 1.0" "mid - 0.5" "custom"))
          (choice-menu '())
          (current-window (selected-window))
          (current-point (point))
