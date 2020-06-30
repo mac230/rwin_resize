@@ -57,7 +57,7 @@
   (mac-side-window-deleter)  
   ;; don't split into top bottom in this layout
   (setq display-buffer-alist 
-      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*"
+      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff"
 	 (display-buffer-reuse-window
 	  mac-window-config-1-help-display
 	  display-buffer-pop-up-window
@@ -110,7 +110,7 @@ Requires a wide frame, so set frame width immediately."
 ;;  (display-buffer-in-side-window (current-buffer) '((side . right)))
   (split-window-vertically -12)
   (setq display-buffer-alist 
-      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*"
+      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff"
 	 (display-buffer-reuse-window
 	  mac-window-config-2-help-display))
 	("*Backtrace*"
@@ -184,7 +184,7 @@ Requires a wide frame, so set frame width immediately."
      nil t)
     (split-window-horizontally)
     (setq display-buffer-alist 
-	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*"
+	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff"
 	     (display-buffer-reuse-window
 	      mac-window-config-3-help-display))
 	    ("*Backtrace*"
@@ -222,25 +222,26 @@ Requires a wide frame, so set frame width immediately."
      (car (window-at-side-list nil 'bottom))
      (- 12 (window-height (car (window-at-side-list nil 'bottom)))) nil)
     (setq display-buffer-alist 
-	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*"
-	     (display-buffer-reuse-window
-	      mac-window-config-4-help-display))
+	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff"
+	     (mac-window-config-4-help-display))
 	    ("*Backtrace*"
-	 (mac-backtrace-buffer-display)))
+	 (display-buffer-reuse-window
+	  mac-backtrace-buffer-display)))
 	  ;; n. columns to split into left/right
 	  split-width-threshold 80
 	  ;; n. lines to split into top/bottom
 	  split-height-threshold 100
 	  proc-window (car (reverse (window-at-side-list nil 'left))))
-    (mac-process-placer proc-window)))
+    (mac-process-placer proc-window))
 
 
 ;; use the top left (editing) window, since the disp. is narrow
 (defun mac-window-config-4-help-display (buffer alist)
   (window--display-buffer
    buffer
-   (car (window-at-side-list nil 'left))
-   'reuse alist nil))
+   (selected-window)
+   'reuse alist nil)
+  )
 
 ;; (mac-window-config-4)
 ;; (mac-window-config-4-help-display (get-buffer "*eshell*") nil)
@@ -264,7 +265,7 @@ Requires a wide frame, so set frame width immediately."
      nil t)
   (split-window-horizontally)
   (setq display-buffer-alist 
-      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*"
+      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff"
 	 (display-buffer-reuse-window
 	  mac-window-config-5-help-display))
 	("*Backtrace*"
@@ -1271,4 +1272,15 @@ w/ prefix arg, read a string to be used for subsetting."
   )
 
 
-
+(defun mac-display-calc ()
+  "My function for displaying the calc buffer."
+  (interactive)
+  (let ((b (get-buffer "*Calculator*")))
+    (when (not b) (calc))
+    (select-window (car (window-at-side-list nil 'left)))
+    (delete-other-windows-vertically)
+    (split-window-vertically -9)
+    (select-window (car (cdr (window-at-side-list nil 'left))))
+    (switch-to-buffer b)
+    (select-window (car (window-at-side-list nil 'left)))
+    ))

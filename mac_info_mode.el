@@ -68,7 +68,7 @@
     ))
   
 
-(defun mac-info-other-window (arg)
+(defun mac-info-other-window-master (arg)
   "Execute a command in the info mode buffer when it exists."
   (interactive "p")
   (let ((win-list (window-list))
@@ -106,6 +106,6 @@
      )
     )) 
 
-(define-key mc-r-map (kbd "C-\\") 'mac-info-other-window)
+(define-key mc-r-map (kbd "C-\\") 'mac-info-other-window-master)
 
 
