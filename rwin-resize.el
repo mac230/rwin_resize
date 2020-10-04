@@ -57,7 +57,7 @@
   (mac-side-window-deleter)  
   ;; don't split into top bottom in this layout
   (setq display-buffer-alist 
-      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c"
+      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
 	 (display-buffer-reuse-window
 	  mac-window-config-1-help-display
 	  display-buffer-pop-up-window
@@ -110,7 +110,7 @@ Requires a wide frame, so set frame width immediately."
 ;;  (display-buffer-in-side-window (current-buffer) '((side . right)))
   (split-window-vertically -12)
   (setq display-buffer-alist 
-      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c"
+      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
 	 (display-buffer-reuse-window
 	  mac-window-config-2-help-display))
 	("*Backtrace*"
@@ -184,7 +184,7 @@ Requires a wide frame, so set frame width immediately."
      nil t)
     (split-window-horizontally)
     (setq display-buffer-alist 
-	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c"
+	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
 	     (display-buffer-reuse-window
 	      mac-window-config-3-help-display))
 	    ("*Backtrace*"
@@ -222,7 +222,7 @@ Requires a wide frame, so set frame width immediately."
      (car (window-at-side-list nil 'bottom))
      (- 12 (window-height (car (window-at-side-list nil 'bottom)))) nil)
     (setq display-buffer-alist 
-	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c"
+	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
 	     (mac-window-config-4-help-display))
 	    ("*Backtrace*"
 	 (display-buffer-reuse-window
@@ -265,7 +265,7 @@ Requires a wide frame, so set frame width immediately."
      nil t)
   (split-window-horizontally)
   (setq display-buffer-alist 
-      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c"
+      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
 	 (display-buffer-reuse-window
 	  mac-window-config-5-help-display))
 	("*Backtrace*"
@@ -548,6 +548,13 @@ and ielm for the lower editing window.
     (set-buffer current-buffer)
     (cd working-dir)))
 
+(defun send-line-helper ()
+  "Context-aware function."
+  (interactive)
+  (if (eq major-mode 'latex-mode)
+      (ebib)
+    (send-line-R-python-shell-ielm)
+    ))
 
 (defun send-line-R-python-shell-ielm ()
   "Send the current line to R, shell, ielm, or python based on context."
@@ -791,15 +798,15 @@ and ielm for the lower editing window.
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-\\")   'mac-info-other-window)
     (define-key map (kbd "C-c k") 'r-python-shell-or-ielm-send-region)
-    (define-key map (kbd "C-j")   'send-line-R-python-shell-ielm)
+    (define-key map (kbd "C-j")   'send-line-helper)
     (define-key map (kbd "C-c l") 'r-object-send)
     (define-key map (kbd "C-c c") 'goto-line)
     (define-key map (kbd "C-w")   'kill-ring-save)
     (define-key map (kbd "M-w")   'kill-region)
     (define-key map (kbd "M-r")   'mac-ess-mark-statement)
-    (define-key map (kbd "C-c u") 'parenth-insert)
+    (define-key map (kbd "C-c u") (lambda () (interactive) (mac-ins) (insert "()") (backward-char 1)))
     (define-key map (kbd "C-c r") 'copy-to-register)
-    (define-key map (kbd "C-c b") 'curly-bracket-insert)
+    (define-key map (kbd "C-c b") (lambda () (interactive) (mac-ins) (insert "{}") (backward-char 1)))
     (define-key map (kbd "C-c y") 'bookmark-jump)
     (define-key map (kbd "C-c n") 'insert-register)
     (define-key map (kbd "C-c w") 'mn-weather)
@@ -808,17 +815,13 @@ and ielm for the lower editing window.
        map)
    "Keymap for r commands.")
 
-
-
 (define-minor-mode mc-r-mode
   "Different ESS eval commands for mc."
   :lighter " mc-R-mode"
   :keymap mc-r-map
   :global t)
 
-
 (mc-r-mode 1)
-
 
 (defun symbol-hydra-helper (arg)
   "Helper function that allows deleting active regions."
@@ -1272,7 +1275,7 @@ w/ prefix arg, read a string to be used for subsetting."
   )
 
 
-(defun mac-display-calc ()
+(defun display-calc ()
   "My function for displaying the calc buffer."
   (interactive)
   (let ((b (get-buffer "*Calculator*")))

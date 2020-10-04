@@ -12,6 +12,9 @@
 (defvar list-regex "^ + - \\[[[:digit:]xX ]*\\] *\\(.*:: \\)\\{0,1\\}"
   "regex for a list element; used to mark where sublists should go")
 
+(defvar numbered-list-regex "^ + - \\[[[:digit:]]+\\] *\\(.*:: \\)\\{0,1\\}"
+  "regex for a numbered list element; used to mark where sublists should go")
+
 (defvar todo-regex "^ + - \\[[xX ]*\\]\\(.*:: \\)\\{0,1\\}"
   "regex for a todo list element; used to mark where sublists should go")
 
@@ -239,6 +242,8 @@ Setting these boundaries helps w/ positioning and renumbering."
   (when (not next-list-elt)
     (re-search-forward "\\(^ +\\+.*\n\\)+\\(^ .*\n\\)*" fwd-bound t))
 
+
+  
   (insert (concat "\n    - [" (format "%s" current-number) "] "))
   (list-line-renumber)
   (re-search-backward "^    - " (line-beginning-position) t)
@@ -252,6 +257,7 @@ Setting these boundaries helps w/ positioning and renumbering."
   (goto-char fwd-bound)
   (beginning-of-line)
   (list-line-adder)
+  (list-single-spacer)
   (setq fwd-bound (fwd-bound))
   (goto-char fwd-bound)
   (re-search-backward (concat "^    - \\["  current-number) rev-bound t)
@@ -295,7 +301,9 @@ Setting these boundaries helps w/ positioning and renumbering."
   (setq fwd-bound (fwd-bound))
   (goto-char fwd-bound)
   (beginning-of-line)
+  (list-single-spacer)
   (list-line-adder)
+  (list-single-spacer)
   (end-of-buffer)
   (re-search-backward "~~" rev-bound t)
   (replace-match "")
@@ -309,8 +317,7 @@ Setting these boundaries helps w/ positioning and renumbering."
 (defun mac-org-numbered-or-todo (arg)
   "Insert a todo or numbered list item depending on context."
   (interactive "P")
-  (let* ((current-point (point))
-         (rev-bound (rev-bound))
+  (let* ((rev-bound (rev-bound))
          (fwd-bound (fwd-bound))
          (next-list-elt
           (save-excursion
@@ -327,15 +334,28 @@ Setting these boundaries helps w/ positioning and renumbering."
        (save-excursion
          (re-search-backward todo-regex rev-bound t)))
       (mac-org-todo-list))
-     ;; prefix arg
-     ((not (= (prefix-numeric-value arg) 1))
-      (mac-org-todo-list))
+     ;; in a numbered list already
+     ((or
+       (save-excursion
+         (re-search-forward numbered-list-regex fwd-bound t))
+       (save-excursion
+         (re-search-backward numbered-list-regex rev-bound t)))
+      (mac-org-numbered-list))
+     ;; no prefix arg
+     ((= (prefix-numeric-value arg) 1)
+      (mac-org-numbered-list))
       ;; all other instances
      (t
-      (mac-org-numbered-list)))))
-
-
-
+      (mac-org-todo-list)))
+    
+    ;; add spacing to the list w/ prefix arg = 0
+    (when (eq arg 0)
+      (progn 
+	(list-line-adder)
+	(re-search-forward list-regex fwd-bound nil)
+	(end-of-line))
+        ))
+  )
 
 
 ;; -----
@@ -541,8 +561,9 @@ how to insert the sublist."
    )
   (insert "~~")
   (list-line-remover)
-  (list-line-adder)
-  (re-search-forward "~~" nil t)
+  (list-single-spacer)
+  ;;  (list-line-adder)
+  (re-search-backward "~~" nil t)
   (replace-match "")
   )
 
