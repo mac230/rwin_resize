@@ -300,10 +300,11 @@ Requires a wide frame, so set frame width immediately."
 (defun mac-select-window-config-master ()
   "Master function for choosing a window configuration."
   (interactive)
-  (global-data-entry-mode 1)
   (let* ((config '("1" "2" "3" "4" "5"))
-	 (choice (string-to-number (ivy-read "choice: " config))))
-    (global-data-entry-mode -1)
+	 (choice (string-to-number
+		  (ivy-read "choice: "
+			    config
+			    :keymap data-entry-mode-map))))
     (cond
      ((= choice 1)
       (mac-window-config-1))
@@ -506,7 +507,7 @@ and ielm for the lower editing window.
     (when (not (bufferp (get-buffer "*Calculator*")))
       (calc))
     (when (not (bufferp (get-buffer "*eshell*")))
-      (calc))
+      (eshell))
     (sit-for 4)
     (jump-to-register ?a))
   )
