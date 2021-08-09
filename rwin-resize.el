@@ -1140,6 +1140,10 @@ This function can be debugged by commenting out the ibuffer line."
   (interactive "p")
   (pmdr-timer (prefix-numeric-value ptime) "35"))
 
+(defun pmdr-10-0 (ptime)
+  "Pomodoro timer with 10 minutes total."
+  (interactive "p")
+  (pmdr-timer (prefix-numeric-value ptime) "10"))
 
 ;; -----
 (defun r-object-send (arg)
@@ -1276,15 +1280,4 @@ w/ prefix arg, read a string to be used for subsetting."
   )
 
 
-(defun display-calc ()
-  "My function for displaying the calc buffer."
-  (interactive)
-  (let ((b (get-buffer "*Calculator*")))
-    (when (not b) (calc))
-    (select-window (car (window-at-side-list nil 'left)))
-    (delete-other-windows-vertically)
-    (split-window-vertically -9)
-    (select-window (car (cdr (window-at-side-list nil 'left))))
-    (switch-to-buffer b)
-    (select-window (car (window-at-side-list nil 'left)))
-    ))
+
