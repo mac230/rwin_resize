@@ -1143,7 +1143,7 @@ This function can be debugged by commenting out the ibuffer line."
 (defun pmdr-10-0 (ptime)
   "Pomodoro timer with 10 minutes total."
   (interactive "p")
-  (pmdr-timer (prefix-numeric-value ptime) "10"))
+  (run-at-time "10 min" nil 'ibuffer))
 
 ;; -----
 (defun r-object-send (arg)
