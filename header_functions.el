@@ -225,8 +225,6 @@ Use w/ a hydra to rapidly and efficiently generate org-headings."
     (insert "**** " ))
    (t
     (message "Invalid header specifications")))
-  (mac-header-capitalization)
-  (org-set-property "count" "0")
-  (org-set-property "no_review" (if (yes-or-no-p "set 'no_review' to t? ")
-                                    "t" "nil")))
+  (mac-header-capitalization))
+
 
