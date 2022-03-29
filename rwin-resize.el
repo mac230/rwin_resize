@@ -750,25 +750,28 @@ and ielm for the lower editing window.
   ))
 
 
-
-
 (defun mac-ess-mark-statement ()
   "Mark a statement in R code so that the function name, not just the text bounded by parentheses, is grabbed."
   (interactive)
+  (let ((count))
+    
+    (if (eq major-mode 'ess-mode)
+        (setq count 2)
+      (setq count 1))
   (cond
 
    ;; at the right parenthesis (statement end)
    ((looking-back "\)" (- (point) 1) nil)
     (progn
       (set-mark (point))
-      (backward-sexp 2)))
+      (backward-sexp count)))
 
    ;; at the left parenthesis (statement beginning)
    ((looking-at "\(")
     (progn
       (forward-sexp)
       (set-mark (point))
-      (backward-sexp 2)))
+      (backward-sexp count)))
 
    ;; in the function name
    ((looking-at "[a-zA-Z0-9._]+(")
@@ -777,17 +780,21 @@ and ielm for the lower editing window.
       (goto-char (match-beginning 0))
       (forward-sexp)
       (set-mark (point))
-      (backward-sexp 2)))
+      (backward-sexp count)))
 
    ;; inside the parens
    (t
-    (progn
-      (re-search-backward "^[^=]+\\([a-zA-Z0-9._]\\)+\\((\\)" nil nil 1)
-      (goto-char (match-beginning 2))
-      (forward-sexp)
-      (set-mark (point))
-      (backward-sexp 2)))
-))
+    (if (= count 2)
+        (progn
+          (re-search-backward "^[^=]+\\([a-zA-Z0-9._]\\)+\\((\\)" nil nil 1)
+          (goto-char (match-beginning 2))
+          (forward-sexp)
+          (set-mark (point))
+          (backward-sexp count))
+      (progn
+        (re-search-backward "\(" nil nil 1)
+        (mark-sexp)))))
+    (exchange-point-and-mark)))
 
 
 ;; -----
@@ -1143,7 +1150,14 @@ This function can be debugged by commenting out the ibuffer line."
 (defun pmdr-10-0 (ptime)
   "Pomodoro timer with 10 minutes total."
   (interactive "p")
-  (run-at-time "10 min" nil 'ibuffer))
+  (run-at-time "10 minutes" nil 'pmdr-10-0-helper))
+
+(defun pmdr-10-0-helper ()
+  "Helper function for 'pmdr-10-0'."
+  (interactive)
+  (when (eq (current-buffer) (get-buffer "*Ibuffer*"))
+    (set-buffer (previous-buffer)))
+  (read-key "Time to get back to work.  Press any key to do so: "))
 
 ;; -----
 (defun r-object-send (arg)
