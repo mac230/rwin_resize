@@ -16,21 +16,26 @@
 
 ;; helper function for selecting a process
 ;; select a process buffer and place it
-(defun mac-process-placer (window)
+(defun mac-process-placer (window &optional my-process)
   "Select a process and place its buffer in the appropriate window."
  (let* ((process-names '(R shell ielm Python))
 	(process-buf))
-   (ivy-read "process: " process-names
-	     :action
-	     (lambda (arg)
-	       (setq process-buf
-		     (process-buffer
-		      (get-process (format "%s" arg))))))
-   (window--display-buffer
-   process-buf
-   window
-   'reuse nil nil))
- )
+   (if my-process
+       (window--display-buffer
+        my-process
+        window
+        'reuse nil nil)
+     (progn     
+       (ivy-read "process: " process-names
+                 :action
+                 (lambda (arg)
+                   (setq process-buf
+                         (process-buffer
+                          (get-process (format "%s" arg))))))
+       (window--display-buffer
+        process-buf
+        window
+        'reuse nil nil)))))
 
 ;; necessary to keep R help from throwing an error
 (setq ess-help-pop-to-buffer nil)
@@ -169,7 +174,7 @@ Requires a wide frame, so set frame width immediately."
     ))
 
 
-(defun mac-window-config-3 ()
+(defun mac-window-config-3 (&optional my-process)
   "Window configuration with: 
    [1] a coding/notes buffer (left)
    [2] a process buffer (right)."
@@ -194,7 +199,7 @@ Requires a wide frame, so set frame width immediately."
 	  ;; n. lines to split into top/bottom
 	  split-height-threshold 20
 	  proc-window (car (window-at-side-list nil 'right)))
-    (mac-process-placer proc-window))
+    (mac-process-placer proc-window my-process))
   )
 
 ;; (mac-window-config-3)
@@ -510,6 +515,7 @@ and ielm for the lower editing window.
       (eshell))
     (sit-for 4)
     (jump-to-register ?a))
+  (setq comment-add 1)
   )
 
 
@@ -1160,16 +1166,18 @@ This function can be debugged by commenting out the ibuffer line."
   (read-key "Time to get back to work.  Press any key to do so: "))
 
 ;; -----
+;; r object sending function
 (defun r-object-send (arg)
   "Send an object to the inferior R process to see what it looks like.  R functions for object 'x' information include:
-
    [1] x          - input just the object
-   [2] str(x)     - get the structure of the object
-   [3] summary(x) - get summary statistic information on x
-   [4] class(x)   - get class information for x
-   [5] typeof(x)  - determine the type of an R object
-   [6] is.y(x)    - input 'y' (e.g., 'vector') to test if x is that type of object
-   [7] length(x)  - get the length of an object
+   [2] head(x)    - get the first portion of the object
+   [3] str(x)     - get the structure of the object
+   [4] summary(x) - get summary statistic information on x
+   [5] class(x)   - get class information for x
+   [6] typeof(x)  - determine the type of an R object
+   [7] is.y(x)    - input 'y' (e.g., 'vector') to test if x is that type of object
+   [8] length(x)  - get the length of an object
+   [9] names(x)   - get the names of an object
 
 w/ prefix arg, read a string to be used for subsetting." 
   (interactive "P")
@@ -1177,21 +1185,25 @@ w/ prefix arg, read a string to be used for subsetting."
   (beginning-of-line)
   (forward-word)
   (lispy-mark-symbol)
+
   (let* ((object (buffer-substring-no-properties (mark) (point)))
          (current-point (point))
-         (keys '("a" "s" "d" "f" "j" "h" "k"))
+         (keys '("a" "h" "s" "d" "f" "j" "h" "k" "n"))
          (keys-again keys)
-         (command '("" "str(" "summary(" "class(" "is." "typeof(" "length("))
+         (command '("" "head(" "str(" "summary(" "class(" "is." "typeof(" "length(" "names("))
          (choice '("\n"))
          (by "$")
          (subset))
+
     ;; use prefix argument to subset the object as desired
     ;; input what subsetting you want via 'read-string'
     (when (not (= (prefix-numeric-value arg) 1))
       (setq subset (read-string "subset (e.g., $1, [1], etc...)")))
+
     ;; set up choice 
     (dotimes (n (length keys) choice)
       (setq choice (cons (concat "\n                         " (nth n keys) ": " (nth n command)) choice)))
+
     ;; ask which choice I want, then act accordingly
     (let* ((my-choice (read-key-sequence (propertize
                                 (mapconcat 'identity choice "")
@@ -1199,6 +1211,8 @@ w/ prefix arg, read a string to be used for subsetting."
            ;; return the position in the list that matches my choice above
            ;; use this to concat from 'command'
            (number (seq-position keys-again my-choice)))
+
+
       ;; now send the desired input
       ;; do this via 'cond' to get the desired result
       (cond ((and
@@ -1207,6 +1221,7 @@ w/ prefix arg, read a string to be used for subsetting."
              (ess-send-string (ess-get-process)
                            (concat (nth number command) object)
                            'nowait))
+
             ;; is.something() case
             ((and
               (= number 4)
@@ -1214,24 +1229,28 @@ w/ prefix arg, read a string to be used for subsetting."
             (ess-send-string (ess-get-process)
                              (concat "is." (read-string "is. what? (e.g., vector): ") "(" object ")")
                              'nowait))
+
             ;; all others w/ no prefix arg
             ((not subset)
              (ess-send-string (ess-get-process)
                            (concat (nth number command) object ")")
                            'nowait))
+
+
             ;; is.something w/ subset
             ((and subset
                   (= number 4))
              (ess-send-string (ess-get-process)
-                             (concat "is." (read-string "is. what? (e.g., vector): ") "(" object subset ")")
+                             (concat "is." (read-string "is. what? (e.g., vector): ") "(" object subset)
                              'nowait))
+
             ;; subset arg
             (subset
              (ess-send-string (ess-get-process)
                            (concat (nth number command) object subset)
                            'nowait)))
           (deactivate-mark)
-        (message ""))))
+	  (message ""))))
 
 
 ;; -----
