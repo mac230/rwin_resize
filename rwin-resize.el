@@ -572,7 +572,7 @@ and ielm for the lower editing window.
 			major-mode)))
 	 (modes (map 'list modes-fun w)))
     (cond
-     ((member 'inferior-ess-mode modes)
+     ((member 'inferior-ess-r-mode modes)
       (ess-eval-line))
      ((member 'shell-mode modes)
       (progn
@@ -600,7 +600,7 @@ and ielm for the lower editing window.
 	 (modes (map 'list modes-fun w)))
     (cond
      ;; ESS 
-     ((member 'inferior-ess-mode modes)
+     ((member 'inferior-ess-r-mode modes)
       (ess-eval-region-or-function-or-paragraph nil))
      ;; shell
      ((member 'shell-mode modes)
@@ -761,7 +761,7 @@ and ielm for the lower editing window.
   (interactive)
   (let ((count))
     
-    (if (eq major-mode 'ess-mode)
+    (if (eq major-mode 'ess-r-mode)
         (setq count 2)
       (setq count 1))
   (cond
@@ -868,7 +868,7 @@ Inserts this separator as a comment in R, python, and shell modes."
    ;; determine which separator to use based on major mode
    (cond
     ((or
-        (eq major-mode 'ess-mode)
+        (eq major-mode 'ess-r-mode)
         (eq major-mode 'python-mode)
         (eq major-mode 'sh-mode))
      (setq sep "## -----\n## "))

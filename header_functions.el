@@ -21,7 +21,8 @@
                             "TFT"
                             "which"
                             "and"
-                            "this" 
+                            "this"
+                            "w/"
                             )
   "List of words to not capitalize in headings.")
 
