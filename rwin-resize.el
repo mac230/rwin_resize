@@ -760,10 +760,17 @@ and ielm for the lower editing window.
   "Mark a statement in R code so that the function name, not just the text bounded by parentheses, is grabbed."
   (interactive)
   (let ((count))
-    
-    (if (eq major-mode 'ess-r-mode)
+
+    ;; determine what type of buffer we're in
+    ;; need to distinguish an ess-r-mode / org R
+    ;; src blocks from everything else 
+    (if (or
+         (eq major-mode 'ess-r-mode)
+         (and (org-in-src-block-p)
+              (string= "R" (car (org-babel-get-src-block-info)))))
         (setq count 2)
       (setq count 1))
+
   (cond
 
    ;; at the right parenthesis (statement end)
