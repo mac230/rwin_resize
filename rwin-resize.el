@@ -1090,6 +1090,7 @@ commenting out the ibuffer line."
        (concat ptime " min")
        nil 'ibuffer));; regular time
     (run-at-time (concat min " min") nil 'ibuffer)
+    
     ;; set up a buffer to place time stamp information into;
     ;; if it doesn't exist, make it, then save it
     ;; then move into position
@@ -1097,20 +1098,21 @@ commenting out the ibuffer line."
       (progn
         (find-file "~/emacs/time_stamp.org")
         (save-buffer)))
-    (switch-to-buffer "time_stamp.org")
-    (beginning-of-buffer)
-    ;; when expression to insert the year as an
-    ;; org-mode level 1 header if it's not there
-    (when (not (re-search-forward (concat "* " (format-time-string "%Y") "\n") nil t))
-      (re-search-backward "-\\*-" nil t)
-      (end-of-line)
-      (insert (concat "\n\n" this-year)))
-    ;; when expression to insert the day's date HEADER if it's not there
-    (when (not (re-search-forward (concat date-head "\n" "------------\n") nil t))
-      (progn
-        (beginning-of-buffer)
-        (re-search-forward this-year nil t)
-        (insert (concat "\n------------\n" date-head "\n" "------------\n\n"))))
+    (with-current-buffer (get-buffer "time_stamp.org")
+      (goto-char (point-min))
+      ;; when expression to insert the year as an
+      ;; org-mode level 1 header if it's not there
+      (when (not (re-search-forward (concat "* " (format-time-string "%Y") "\n") nil t))
+        (re-search-backward "-\\*-" nil t)
+        (end-of-line)
+        (insert (concat "\n\n" this-year)))
+      ;; when expression to insert the day's date HEADER if it's not there
+      (when (not (re-search-forward (concat date-head "\n" "------------\n") nil t))
+        (progn
+          (goto-char (point-min))
+          (re-search-forward this-year nil t)
+          (insert (concat "\n------------\n" date-head "\n" "------------\n\n")))))
+    
     ;; insert the timer information into R for easy visualization
     (when
         (not
