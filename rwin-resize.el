@@ -759,17 +759,20 @@ and ielm for the lower editing window.
 (defun mac-ess-mark-statement ()
   "Mark a statement in R code so that the function name, not just the text bounded by parentheses, is grabbed."
   (interactive)
-  (let ((count))
+  (let ((count 1))
 
     ;; determine what type of buffer we're in
     ;; need to distinguish an ess-r-mode / org R
     ;; src blocks from everything else 
-    (if (or
-         (eq major-mode 'ess-r-mode)
-         (and (org-in-src-block-p)
-              (string= "R" (car (org-babel-get-src-block-info)))))
-        (setq count 2)
-      (setq count 1))
+    ;; 2023.11.28 - updating because 'org-in-src-block-p'
+    ;; errors in emacs 30 when called in a non-org buffer
+    (when (eq major-mode 'ess-r-mode)
+      (setq count 2))
+
+    (when (eq major-mode 'org-mode)
+      (when (and (org-in-src-block-p)
+                 (string= "R" (car (org-babel-get-src-block-info))))
+        (setq count 2)))
 
   (cond
 
@@ -799,8 +802,15 @@ and ielm for the lower editing window.
    (t
     (if (= count 2)
         (progn
+          ;; 2023.11.28 - clause for
+          ;; modifying the syntax
+          ;; entry for '.' so that
+          ;; functions like 'write.table'
+          ;; are fully marked.  should
+          ;; be a buffer-local change 
+          (modify-syntax-entry ?. "_")
           (re-search-backward "^[^=]+\\([a-zA-Z0-9._]\\)+\\((\\)" nil nil 1)
-          (goto-char (match-beginning 2))
+          (goto-char (match-beginning 1))
           (forward-sexp)
           (set-mark (point))
           (backward-sexp count))
