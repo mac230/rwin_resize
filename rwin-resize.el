@@ -1352,4 +1352,11 @@ w/ prefix arg, read a string to be used for subsetting."
   )
 
 
-
+;; -----
+;; 2023.12.02 - this makes the error
+;; buffer for src blocks appear in 
+;; the window you're working in as I prefer
+(add-to-list 'display-buffer-alist
+             '(".*Org-Babel Error Output.*"
+               (display-buffer-reuse-window
+                mac-window-config-4-help-display)))
