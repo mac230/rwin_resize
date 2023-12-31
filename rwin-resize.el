@@ -1301,6 +1301,7 @@ w/ prefix arg, read a string to be used for subsetting."
   (get-buffer-create "*writing_output*")
   (kill-ring-save (point) (mark) t)
   (with-current-buffer "*writing_output*"
+    (delete-region (point-min) (point-max))
     (yank)
     (goto-char (point-min))
     (while (re-search-forward "\\(.\\)\\(\n\\)" (point-max) t)
@@ -1358,5 +1359,10 @@ w/ prefix arg, read a string to be used for subsetting."
 ;; the window you're working in as I prefer
 (add-to-list 'display-buffer-alist
              '(".*Org-Babel Error Output.*"
+               (display-buffer-reuse-window
+                mac-window-config-4-help-display)))
+
+(add-to-list 'display-buffer-alist
+             '("*wclock*"
                (display-buffer-reuse-window
                 mac-window-config-4-help-display)))
