@@ -478,7 +478,8 @@ and ielm for the lower editing window.
 
 (defun mac-start-all-processes ()
   "Start the various processes I interact w/ in REPL setup."
-  (let ((cb (current-buffer))
+  (let ((default-directory "~")
+        (cb (current-buffer))
 	(process-names '(R shell ielm Python)))
     (window-configuration-to-register ?a)
 
@@ -1173,7 +1174,8 @@ commenting out the ibuffer line."
     (switch-to-buffer curr-buff)
     ;; added so I don't have to think about this,
     ;; but still regularly save my scratch buffer
-    (my-persistent-scratch-save)))
+    (my-persistent-scratch-save)
+    (save-some-buffers)))
 
 
 ;; helper functions

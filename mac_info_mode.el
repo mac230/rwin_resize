@@ -61,7 +61,7 @@
 	  (select-window right-window)
 	  (unless (not (commandp fun))
 	    (command-execute fun))
-	  (setq key (read-key-sequence "input: ")
+	  (setq key (read-key-sequence "input (cancel w/ SPC): ")
 		fun (key-binding key)))
 	))
     (select-window current-window)
