@@ -1136,14 +1136,15 @@ commenting out the ibuffer line."
       ;; the ESS equivalent of 'beginning-of-visual-line'
       ;; leaves the prompt in place
       (comint-bol)
-      (kill-visual-line)
+      (delete-region (point) (line-end-position))
       (insert (concat "time = '" min "  min, " (format-time-string " %H:%M:%S %p,  %m.%d.%Y") "'"))
       (inferior-ess-send-input))
     ;; return to the buffer of interest,
     ;; then switch to 'time_stamp.org'
     ;; and get into position
     (switch-to-buffer "time_stamp.org")
-    (end-of-buffer)(when (not (re-search-backward "\* Backups" nil t))
+    (end-of-buffer)
+    (when (not (re-search-backward "\* Backups" nil t))
                      (progn
                        (end-of-buffer)
                        (beginning-of-line)
