@@ -1072,7 +1072,12 @@ commenting out the ibuffer line."
          ;; I'll search backward for the most recent
          ;; version of this to place time stamps sequentially
          (date-line (concat ", " (format-time-string "%m.%d.%Y")))
-         (this-year (concat "* " (format-time-string "%Y") "\n")))
+         (this-year (concat "* " (format-time-string "%Y") "\n"))
+         ;; this is necessary so that R gets started
+         ;; locally, not on, e.g., the nas if I'm
+         ;; connecting remotely via ssh
+         (default-directory "~/")
+         )
     ;; use 'cond' function to determine if I
     ;; set aside time for specific problems
     (cond
@@ -1125,13 +1130,15 @@ commenting out the ibuffer line."
           (insert (concat "\n------------\n" date-head "\n" "------------\n\n")))))
     
     ;; insert the timer information into R for easy visualization
+
+
     (when
         (not
-         (bufferp (get-buffer "*R*")))
+         (get-process "R"))
       (progn
 	(R)
 	(sit-for 3)))
-    (with-current-buffer "*R*"
+    (with-current-buffer (process-buffer (get-process "R"))
       (end-of-buffer)
       ;; the ESS equivalent of 'beginning-of-visual-line'
       ;; leaves the prompt in place
