@@ -13,6 +13,7 @@
          (man)
          (R-buffer)
          (help-page)
+         (my-xwidget)
          (current-buffer (current-buffer))
          (scroll-error-top-bottom t)
          (scroll-fun
@@ -34,6 +35,15 @@
 	      (pdf-view-next-page-command val))
 	    (switch-to-buffer-other-window current-buffer)
             (goto-char current-point)))
+         (xwidget-scroll-fun
+          (lambda (doc-buf)
+	    (progn
+	      (switch-to-buffer-other-window doc-buf)
+	      (when (bobp) (xwidget-webkit-scroll-up-line 1))
+	      (when (eobp) (xwidget-webkit-scroll-down-line -1))
+	      (xwidget-webkit-scroll-up-line val)
+	      (switch-to-buffer-other-window current-buffer)
+	      (goto-char current-point))))
          )
 
   ;; use dolist to find which of the different buffer types you have
@@ -57,61 +67,78 @@
       (when (eq
 	     (buffer-local-value 'major-mode (window-buffer buffer))
 	     'help-mode)
-	(setq help-page (window-buffer buffer))))
+	(setq help-page (window-buffer buffer)))
+      (when (eq
+	     (buffer-local-value 'major-mode (window-buffer buffer))
+	     'xwidget-webkit-mode)
+	(setq my-xwidget (window-buffer buffer)))
+      )
 
   ;; now use cond to decide how to proceed
-  (cond
-   ;; have just a pdf (most likely use scenario)
-   ((and pdf
-         (not man)
-         (not R-buffer)
-         (not help-page))
-    (funcall pdf-scroll-fun))
-   ;; have just a man page
-   ((and man
-         (not pdf)
-         (not R-buffer)
-         (not help-page))
-    (funcall scroll-fun man))
-   ;; have just R help window
-   ((and R-buffer
-         (not pdf)
-         (not man)
-         (not help-page))
-    (funcall scroll-fun R-buffer))
-   ;; have just help window
-   ((and help-page
-         (not pdf)
-         (not man)
-         (not R-buffer))
-    (funcall scroll-fun help-page))
-   ;; have some other configuration
-   ((or pdf man R-buffer help-page)
-    (let* ((key (key-description
-                 (read-key-sequence "scroll window:pdf=SPC, r=R, m=man, h=help")))
-           (stop))
-      (while (not (string= stop "g"))
-        (cond
-         ((string= key "SPC")
-          (funcall pdf-scroll-fun))
-         ((string= key "r")
-          (funcall scroll-fun R-buffer))
-         ((string= key "m")
-          (funcall scroll-fun man))
-         ((string= key "h")
-          (funcall scroll-fun help-page)))
-        (setq stop
-	      (key-description
-	       (read-key-sequence "SPC=pdf, r=R, m=man, h=help, g=quit: ")))
-        )))
-   ;; contingency function
-   (t
-    (if (eq pdf (window-buffer (car (window-at-side-list nil 'right))))
-        (funcall pdf-scroll-fun)
-      (funcall
-       scroll-fun
-       (window-buffer (car (window-at-side-list nil 'right))))))
-   ))
+    (cond
+     ;; have just a pdf (most likely use scenario)
+     ((and pdf
+           (not man)
+           (not R-buffer)
+           (not help-page)
+           (not my-xwidget))
+      (funcall pdf-scroll-fun))
+     ;; have just a man page
+     ((and man
+           (not pdf)
+           (not R-buffer)
+           (not help-page)
+           (not my-xwidget))
+      (funcall scroll-fun man))
+     ;; have just R help window
+     ((and R-buffer
+           (not pdf)
+           (not man)
+           (not help-page)
+           (not my-xwidget))
+      (funcall scroll-fun R-buffer))
+     ;; have just help window
+     ((and help-page
+           (not pdf)
+           (not man)
+           (not R-buffer)
+           (not my-xwidget))
+      (funcall scroll-fun help-page))
+     ;; have just an xwidget view
+     ;; have just help window
+     ((and my-xwidget
+           (not pdf)
+           (not man)
+           (not R-buffer))
+      (funcall xwidget-scroll-fun my-xwidget))
+
+     ;; have some other configuration
+     ((or pdf man R-buffer help-page)
+      (let* ((key (key-description
+                   (read-key-sequence "scroll window:pdf=SPC, r=R, m=man, h=help")))
+             (stop))
+        (while (not (string= stop "g"))
+          (cond
+           ((string= key "SPC")
+            (funcall pdf-scroll-fun))
+           ((string= key "r")
+            (funcall scroll-fun R-buffer))
+           ((string= key "m")
+            (funcall scroll-fun man))
+           ((string= key "h")
+            (funcall scroll-fun help-page)))
+          (setq stop
+	        (key-description
+	         (read-key-sequence "SPC=pdf, r=R, m=man, h=help, g=quit: ")))
+          )))
+     ;; contingency function
+     (t
+      (if (eq pdf (window-buffer (car (window-at-side-list nil 'right))))
+          (funcall pdf-scroll-fun)
+        (funcall
+         scroll-fun
+         (window-buffer (car (window-at-side-list nil 'right))))))
+     ))
   )
 
 
