@@ -68,9 +68,13 @@
 	     (buffer-local-value 'major-mode (window-buffer buffer))
 	     'help-mode)
 	(setq help-page (window-buffer buffer)))
-      (when (eq
+      (when (or
+             (eq
 	     (buffer-local-value 'major-mode (window-buffer buffer))
 	     'xwidget-webkit-mode)
+             (eq
+	     (buffer-local-value 'major-mode (window-buffer buffer))
+	     'nov-xwidget-webkit-mode))
 	(setq my-xwidget (window-buffer buffer)))
       )
 
