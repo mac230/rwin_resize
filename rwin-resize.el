@@ -18,24 +18,24 @@
 ;; select a process buffer and place it
 (defun mac-process-placer (window &optional my-process)
   "Select a process and place its buffer in the appropriate window."
- (let* ((process-names '(R shell ielm Python))
-	(process-buf))
-   (if my-process
-       (window--display-buffer
-        my-process
-        window
-        'reuse nil nil)
-     (progn     
-       (ivy-read "process: " process-names
-                 :action
-                 (lambda (arg)
-                   (setq process-buf
-                         (process-buffer
-                          (get-process (format "%s" arg))))))
-       (window--display-buffer
-        process-buf
-        window
-        'reuse nil nil)))))
+  (let* ((process-names '(R shell ielm Python))
+	 (process-buf))
+    (if my-process
+        (window--display-buffer
+         my-process
+         window
+         'reuse nil nil)
+      (progn     
+        (ivy-read "process: " process-names
+                  :action
+                  (lambda (arg)
+                    (setq process-buf
+                          (process-buffer
+                           (get-process (format "%s" arg))))))
+        (window--display-buffer
+         process-buf
+         window
+         'reuse nil nil)))))
 
 ;; necessary to keep R help from throwing an error
 (setq ess-help-pop-to-buffer nil)
@@ -62,17 +62,20 @@
   (mac-side-window-deleter)  
   ;; don't split into top bottom in this layout
   (setq display-buffer-alist 
-      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
-	 (display-buffer-reuse-window
-	  mac-window-config-1-help-display
-	  display-buffer-pop-up-window
-	  ))
-	("*Backtrace*"
-	 (mac-backtrace-buffer-display)))
-      ;; n. columns to split into left/right
-      split-width-threshold 80
-      ;; n. lines to split into top/bottom
-      split-height-threshold nil))
+        '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
+	   (display-buffer-reuse-window
+	    mac-window-config-1-help-display
+	    display-buffer-pop-up-window
+	    ))
+	  ("*Backtrace*"
+	   (mac-backtrace-buffer-display))
+          ("*Shell Command Output*"
+           (mac-backtrace-buffer-display))
+          )
+        ;; n. columns to split into left/right
+        split-width-threshold 80
+        ;; n. lines to split into top/bottom
+        split-height-threshold nil))
 
 (defun mac-window-config-1-help-display (buffer alist)
   (cond
@@ -81,9 +84,9 @@
      buffer
      (car (window-at-side-list nil 'right))
      'reuse alist nil))
-    (t
-     (display-buffer-pop-up-window buffer alist))
-    ))
+   (t
+    (display-buffer-pop-up-window buffer alist))
+   ))
 
 
 ;; -----
@@ -102,31 +105,34 @@
   [3] reading buffer (right)
 Requires a wide frame, so set frame width immediately."
   (let ((proc-window))
-  (select-window (car (window-at-side-list nil 'left)))
-  (delete-other-windows-internal)
-  (mac-side-window-deleter)
-  (set-frame-width
+    (select-window (car (window-at-side-list nil 'left)))
+    (delete-other-windows-internal)
+    (mac-side-window-deleter)
+    (set-frame-width
      ;; current frame
      nil
      (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))
      ;; don't 'pretend' and set pixelwise
      nil t)
-  (split-window-horizontally)
-;;  (display-buffer-in-side-window (current-buffer) '((side . right)))
-  (split-window-vertically -12)
-  (setq display-buffer-alist 
-      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
-	 (display-buffer-reuse-window
-	  mac-window-config-2-help-display))
-	("*Backtrace*"
-	 (mac-backtrace-buffer-display)))
-      ;; n. columns to split into left/right
-      split-width-threshold 80
-      ;; n. lines to split into top/bottom
-      split-height-threshold 40
-      proc-window (car (reverse (window-at-side-list nil 'left))))
-  (mac-process-placer proc-window)
-  ))
+    (split-window-horizontally)
+    ;;  (display-buffer-in-side-window (current-buffer) '((side . right)))
+    (split-window-vertically -12)
+    (setq display-buffer-alist 
+          '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
+	     (display-buffer-reuse-window
+	      mac-window-config-2-help-display))
+	    ("*Backtrace*"
+	     (mac-backtrace-buffer-display))
+            ("*Shell Command Output*"
+             (mac-backtrace-buffer-display))
+            )
+          ;; n. columns to split into left/right
+          split-width-threshold 80
+          ;; n. lines to split into top/bottom
+          split-height-threshold 40
+          proc-window (car (reverse (window-at-side-list nil 'left))))
+    (mac-process-placer proc-window)
+    ))
 ;; (mac-window-config-2-help-display (get-buffer "*eshell*") nil)
 ;; (mac-window-config-2)
 
@@ -193,7 +199,10 @@ Requires a wide frame, so set frame width immediately."
 	     (display-buffer-reuse-window
 	      mac-window-config-3-help-display))
 	    ("*Backtrace*"
-	 (mac-backtrace-buffer-display)))
+	     (mac-backtrace-buffer-display))
+            ("*Shell Command Output*"
+             (mac-backtrace-buffer-display))
+            )
 	  ;; n. columns to split into left/right
 	  split-width-threshold 80
 	  ;; n. lines to split into top/bottom
@@ -220,24 +229,27 @@ Requires a wide frame, so set frame width immediately."
     ;;    (set-frame-width
     ;;     nil
     ;;     (round (* (nth 3 (assoc 'geometry (car (display-monitor-attributes-list)))) 0.55))
-     nil t)
-    (display-buffer-in-side-window
-     (current-buffer) '((side . bottom)))
-    (window-resize
-     (car (window-at-side-list nil 'bottom))
-     (- 12 (window-height (car (window-at-side-list nil 'bottom)))) nil)
-    (setq display-buffer-alist 
-	  '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
-	     (mac-window-config-4-help-display))
-	    ("*Backtrace*"
-	 (display-buffer-reuse-window
-	  mac-backtrace-buffer-display)))
-	  ;; n. columns to split into left/right
-	  split-width-threshold 80
-	  ;; n. lines to split into top/bottom
-	  split-height-threshold 100
-	  proc-window (car (reverse (window-at-side-list nil 'left))))
-    (mac-process-placer proc-window))
+    nil t)
+  (display-buffer-in-side-window
+   (current-buffer) '((side . bottom)))
+  (window-resize
+   (car (window-at-side-list nil 'bottom))
+   (- 12 (window-height (car (window-at-side-list nil 'bottom)))) nil)
+  (setq display-buffer-alist 
+	'(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
+	   (mac-window-config-4-help-display))
+	  ("*Backtrace*"
+	   (display-buffer-reuse-window
+	    mac-backtrace-buffer-display))
+          ("*Shell Command Output*"
+           (mac-backtrace-buffer-display))
+          )
+	;; n. columns to split into left/right
+	split-width-threshold 80
+	;; n. lines to split into top/bottom
+	split-height-threshold 100
+	proc-window (car (reverse (window-at-side-list nil 'left))))
+  (mac-process-placer proc-window))
 
 
 ;; use the top left (editing) window, since the disp. is narrow
@@ -263,23 +275,27 @@ Requires a wide frame, so set frame width immediately."
   (delete-other-windows-internal)
   (mac-side-window-deleter)
   (set-frame-width
-     ;; current frame
-     nil
-     (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))
-     ;; don't 'pretend' and set pixelwise
-     nil t)
+   ;; current frame
+   nil
+   (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))
+   ;; don't 'pretend' and set pixelwise
+   nil t)
   (split-window-horizontally)
   (setq display-buffer-alist 
-      '(("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
-	 (display-buffer-reuse-window
-	  mac-window-config-5-help-display))
-	("*Backtrace*"
-	 (mac-backtrace-buffer-display)))
-      ;; n. columns to split into left/right
-      split-width-threshold 80
-      ;; n. lines to split into top/bottom
-      split-height-threshold 40
-      proc-window (car (reverse (window-at-side-list nil 'left))))
+        '(
+          ("^\\*Help\\*\\|^\\*Man.**\\|^\\*WoMan .*\\*\\|^\\*help\\[R\\].*\\*\\|.*\\.pdf\\|*info\\*\\|*eww\\*.*\\|*R dired*\\|.*jpeg\\|.*jpg\\|.*tiff\\|\\.el\\|\\.c\\|*sdcv\\*"
+	   (display-buffer-reuse-window
+	    mac-window-config-5-help-display))
+	  ("*Backtrace*"
+	   (mac-backtrace-buffer-display))
+          ("*Shell Command Output*"
+           (mac-backtrace-buffer-display))
+          )
+        ;; n. columns to split into left/right
+        split-width-threshold 80
+        ;; n. lines to split into top/bottom
+        split-height-threshold 40
+        proc-window (car (reverse (window-at-side-list nil 'left))))
   )
 
 
@@ -323,12 +339,12 @@ Requires a wide frame, so set frame width immediately."
       (mac-window-config-5))
      (t
       (mac-window-config-1))
-    )))
+     )))
 
 (key-chord-define-global "jq" 'mac-select-window-config-master)
 
 (defun rwin-resize (arg)
-"Re-size windows to my preferred setup with an editing buffer at top left,
+  "Re-size windows to my preferred setup with an editing buffer at top left,
 RE-Builder in a very short middle window, and R in a short bottom window.
 
 This now uses a 'side-window' for R, effectively making it the only buffer
@@ -350,11 +366,11 @@ and ielm for the lower editing window.
   (interactive "P")
   ;; undo any existing window protections
   (dolist (current-window (window-list))
-      (progn
-        (window-preserve-size current-window t nil)
-        (set-window-dedicated-p current-window nil)
-        (select-window current-window t)
-        (setq window-size-fixed nil)))
+    (progn
+      (window-preserve-size current-window t nil)
+      (set-window-dedicated-p current-window nil)
+      (select-window current-window t)
+      (setq window-size-fixed nil)))
 
   (window-configuration-to-register ?a)
   ;; start in the usual editing window; make that the reference point
@@ -407,13 +423,13 @@ and ielm for the lower editing window.
     ;; shell
     (when (not (and
                 (get-process "shell")
-              (bufferp (get-buffer "*shell*"))))
+                (bufferp (get-buffer "*shell*"))))
       (shell))
 
     ;; ielm
     (when (not (and
                 (get-process "ielm")
-              (bufferp (get-buffer "*ielm*"))))
+                (bufferp (get-buffer "*ielm*"))))
       (ielm))
 
     ;; calc
@@ -587,7 +603,7 @@ and ielm for the lower editing window.
       (comint-send-line (process-buffer (get-process "Python"))))
      (t
       (message "No process buffer to send input to in window list")))
-     )
+    )
   )
 
 
@@ -616,7 +632,7 @@ and ielm for the lower editing window.
 	  (comint-send-input)
 	  )
 	(shell-buffer-update-dir-fun)))
-      ;; ielm
+     ;; ielm
      ((member 'inferior-emacs-lisp-mode modes)
       (let ((ielm-input (progn (mark-sexp -1)
 			       (buffer-substring (point) (mark)))))
@@ -626,11 +642,11 @@ and ielm for the lower editing window.
 	  (insert ielm-input)
 	  (ielm-send-input))
 	(deactivate-mark)))
-      ((member 'inferior-python-mode modes)
-       (elpy-shell-send-statement))
+     ((member 'inferior-python-mode modes)
+      (elpy-shell-send-statement))
      (t
       (message "No process buffer to send input to in window list")))
-     )
+    )
   )
 
 
@@ -684,16 +700,16 @@ and ielm for the lower editing window.
 
     ;; decrementing loop to create the minibuffer text for the re-sizing
     (while options
-    (setq choice-menu
-          (cons
-           (concat
-            "                                  "
-            (car keys)
-            ": "
-            (car options)
-            "\n") choice-menu)
-          options (cdr options)
-          keys (cdr keys)))
+      (setq choice-menu
+            (cons
+             (concat
+              "                                  "
+              (car keys)
+              ": "
+              (car options)
+              "\n") choice-menu)
+            options (cdr options)
+            keys (cdr keys)))
 
     ;; set up our display and read the user choice in the minibuffer
     (let* ((choice
@@ -703,7 +719,7 @@ and ielm for the lower editing window.
            (new-width
             (seq-position keys-again choice)))
 
-  ;; 'cond' function to set frame width; uses position in list of your choice
+      ;; 'cond' function to set frame width; uses position in list of your choice
       (cond
        ;; 0.6 width
        ((= new-width 0)
@@ -730,7 +746,7 @@ and ielm for the lower editing window.
 	 (truncate
 	  (* (float 0.5)
 	     (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
-			 nil t))
+	 nil t))
        ((= new-width 3)
 	(progn
 	  (global-data-entry-mode)
@@ -738,23 +754,23 @@ and ielm for the lower editing window.
 	   nil (truncate
 		(* (float (read-number "fractional width: "))
 		   (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
-			   nil t)
+	   nil t)
 	  (global-data-entry-mode -1)))
        (t
 	(set-frame-width
 	 nil
 	 (truncate (* (float 0.55)
 		      (nth 3 (assoc 'geometry (car (display-monitor-attributes-list))))))
-			 nil t))
+	 nil t))
        ))
-  (select-window current-window)
-  (goto-char current-point)
-  (message "")
-  ;; 2020.04.30 shouldn't need this any longer 
-  ;; conditionally call rwin-resize if we're using a process buffer 
-  ;;  (when (> pfix-arg 0)
-  ;;    (rwin-resize pfix-arg))
-  ))
+    (select-window current-window)
+    (goto-char current-point)
+    (message "")
+    ;; 2020.04.30 shouldn't need this any longer 
+    ;; conditionally call rwin-resize if we're using a process buffer 
+    ;;  (when (> pfix-arg 0)
+    ;;    (rwin-resize pfix-arg))
+    ))
 
 
 (defun mac-ess-mark-statement ()
@@ -775,49 +791,49 @@ and ielm for the lower editing window.
                  (string= "R" (car (org-babel-get-src-block-info))))
         (setq count 2)))
 
-  (cond
+    (cond
 
-   ;; at the right parenthesis (statement end)
-   ((looking-back "\)" (- (point) 1) nil)
-    (progn
-      (set-mark (point))
-      (backward-sexp count)))
-
-   ;; at the left parenthesis (statement beginning)
-   ((looking-at "\(")
-    (progn
-      (forward-sexp)
-      (set-mark (point))
-      (backward-sexp count)))
-
-   ;; in the function name
-   ((looking-at "[a-zA-Z0-9._]+(")
-    (progn
-      (re-search-forward "\(" nil t 1)
-      (goto-char (match-beginning 0))
-      (forward-sexp)
-      (set-mark (point))
-      (backward-sexp count)))
-
-   ;; inside the parens
-   (t
-    (if (= count 2)
-        (progn
-          ;; 2023.11.28 - clause for
-          ;; modifying the syntax
-          ;; entry for '.' so that
-          ;; functions like 'write.table'
-          ;; are fully marked.  should
-          ;; be a buffer-local change 
-          (modify-syntax-entry ?. "_")
-          (re-search-backward "^[^=]+\\([a-zA-Z0-9._]\\)+\\((\\)" nil nil 1)
-          (goto-char (match-beginning 1))
-          (forward-sexp)
-          (set-mark (point))
-          (backward-sexp count))
+     ;; at the right parenthesis (statement end)
+     ((looking-back "\)" (- (point) 1) nil)
       (progn
-        (re-search-backward "\(" nil nil 1)
-        (mark-sexp)))))
+        (set-mark (point))
+        (backward-sexp count)))
+
+     ;; at the left parenthesis (statement beginning)
+     ((looking-at "\(")
+      (progn
+        (forward-sexp)
+        (set-mark (point))
+        (backward-sexp count)))
+
+     ;; in the function name
+     ((looking-at "[a-zA-Z0-9._]+(")
+      (progn
+        (re-search-forward "\(" nil t 1)
+        (goto-char (match-beginning 0))
+        (forward-sexp)
+        (set-mark (point))
+        (backward-sexp count)))
+
+     ;; inside the parens
+     (t
+      (if (= count 2)
+          (progn
+            ;; 2023.11.28 - clause for
+            ;; modifying the syntax
+            ;; entry for '.' so that
+            ;; functions like 'write.table'
+            ;; are fully marked.  should
+            ;; be a buffer-local change 
+            (modify-syntax-entry ?. "_")
+            (re-search-backward "^[^=]+\\([a-zA-Z0-9._]\\)+\\((\\)" nil nil 1)
+            (goto-char (match-beginning 1))
+            (forward-sexp)
+            (set-mark (point))
+            (backward-sexp count))
+        (progn
+          (re-search-backward "\(" nil nil 1)
+          (mark-sexp)))))
     (exchange-point-and-mark)))
 
 
@@ -844,8 +860,8 @@ and ielm for the lower editing window.
     (define-key map (kbd "C-c w") 'mn-weather)
     (define-key map (kbd "C-c 3") 'wc-region)
     (define-key map (kbd "M-m")   'word-b-f)
-       map)
-   "Keymap for r commands.")
+    map)
+  "Keymap for r commands.")
 
 (define-minor-mode mc-r-mode
   "Different ESS eval commands for mc."
@@ -871,89 +887,89 @@ and ielm for the lower editing window.
 
 
 (defun sep-insert ()
- "Insert \"-----\" and move to the next line.  I use this to demarcate separate ideas in my notes.
+  "Insert \"-----\" and move to the next line.  I use this to demarcate separate ideas in my notes.
 Inserts this separator as a comment in R, python, and shell modes."
- (interactive)
- ;; go to the end of the indicated line, then search backward for non-whitespace text.
- ;; this is the position the separator should be positioned relative to
- ;; This way, the function works whether you remember to hit it when
- ;; you've accidentally used 'RET' to insert a newline.
- (end-of-line)
+  (interactive)
+  ;; go to the end of the indicated line, then search backward for non-whitespace text.
+  ;; this is the position the separator should be positioned relative to
+  ;; This way, the function works whether you remember to hit it when
+  ;; you've accidentally used 'RET' to insert a newline.
+  (end-of-line)
 
- (let ((fwd-bound (save-excursion (forward-line 3) (line-end-position)))
-       (sep))
+  (let ((fwd-bound (save-excursion (forward-line 3) (line-end-position)))
+        (sep))
 
-   ;; determine which separator to use based on major mode
-   (cond
-    ((or
-        (eq major-mode 'ess-r-mode)
-        (eq major-mode 'python-mode)
-        (eq major-mode 'sh-mode))
-     (setq sep "## -----\n## "))
+    ;; determine which separator to use based on major mode
+    (cond
+     ((or
+       (eq major-mode 'ess-r-mode)
+       (eq major-mode 'python-mode)
+       (eq major-mode 'sh-mode))
+      (setq sep "## -----\n## "))
 
-    ((or
+     ((or
        (eq major-mode 'emacs-lisp-mode)
        (eq major-mode 'lisp-interaction-mode))
-     (setq sep ";; -----\n;; "))
+      (setq sep ";; -----\n;; "))
 
-    (t
-     (setq sep "-----\n")))
+     (t
+      (setq sep "-----\n")))
 
- ;; make sure we don't get an eobp error (common w/ narrowed buffer)
- (when (eobp)
-     (progn
-       (insert "\n")
-       (previous-line)))
+    ;; make sure we don't get an eobp error (common w/ narrowed buffer)
+    (when (eobp)
+      (progn
+        (insert "\n")
+        (previous-line)))
 
-     ;; always go to the end of the line so that the text on a line doesn't get broken
-     (end-of-line)
-     (cond
+    ;; always go to the end of the line so that the text on a line doesn't get broken
+    (end-of-line)
+    (cond
 
-      ;; 1 - at the beginning of a buffer -> don't insert newline above
-      ((or
-        (bobp)
-        (eq (line-number-at-pos) 1)              ;; regex for closest non-blank line
-        (not (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))))
-       (progn (beginning-of-line) (insert sep) (message "1!")))
+     ;; 1 - at the beginning of a buffer -> don't insert newline above
+     ((or
+       (bobp)
+       (eq (line-number-at-pos) 1)              ;; regex for closest non-blank line
+       (not (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))))
+      (progn (beginning-of-line) (insert sep) (message "1!")))
 
-      ;; 2 - 2 blank lines present between paragraphs/blocks
-      ((and
-                                            ;; regex for closest non-blank line
-        (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
-        (save-excursion (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t)))
-       (progn (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
-                                 ;; regex for blank lines
-              (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t)
-              (beginning-of-line)
-              (insert sep)
-              (end-of-line)
-              (message "2!")))
+     ;; 2 - 2 blank lines present between paragraphs/blocks
+     ((and
+       ;; regex for closest non-blank line
+       (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
+       (save-excursion (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t)))
+      (progn (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
+             ;; regex for blank lines
+             (re-search-forward "^\\( *\n\\|\n+ \\)\\{2\\}" fwd-bound t)
+             (beginning-of-line)
+             (insert sep)
+             (end-of-line)
+             (message "2!")))
 
-      ;; 3 - blank lines preceding point
-      ((and
-        (looking-back "^\\( *\n\\|\n+ \\)")
-        (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)))
-       (progn
-         (push-mark)
-         (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
-         (end-of-line)
-         (delete-region (point) (mark))
-         (insert (concat "\n\n\n" sep))
-         (end-of-line)
-         (message "3!")))
+     ;; 3 - blank lines preceding point
+     ((and
+       (looking-back "^\\( *\n\\|\n+ \\)")
+       (save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)))
+      (progn
+        (push-mark)
+        (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
+        (end-of-line)
+        (delete-region (point) (mark))
+        (insert (concat "\n\n\n" sep))
+        (end-of-line)
+        (message "3!")))
 
-      ;; 4 - no blank lines
-      ((save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
-       (progn
-         (push-mark)
-         (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
-         (end-of-line)
-         (delete-region (point) (mark))
-         (insert (concat "\n\n\n" sep))
-         (end-of-line)
-         (message "4!")))
-      )
-     ))
+     ;; 4 - no blank lines
+     ((save-excursion (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t))
+      (progn
+        (push-mark)
+        (re-search-backward "\\(^ *?[^ \t\n\f$]\\)\\|\\(^ *?[})]\\)" nil t)
+        (end-of-line)
+        (delete-region (point) (mark))
+        (insert (concat "\n\n\n" sep))
+        (end-of-line)
+        (message "4!")))
+     )
+    ))
 
 
 
@@ -963,19 +979,19 @@ Inserts this separator as a comment in R, python, and shell modes."
   (interactive)
   (let ((expr))
 
-  (progn
-    (push-mark (point) nil nil)
-    (re-search-backward "j" (line-beginning-position) t)
-    (replace-match "")
-    (setq expr (buffer-substring-no-properties (point) (mark)))
+    (progn
+      (push-mark (point) nil nil)
+      (re-search-backward "j" (line-beginning-position) t)
+      (replace-match "")
+      (setq expr (buffer-substring-no-properties (point) (mark)))
 
-    ;; eval in R; this way can check against calc ouput
-    (ess-send-string (ess-get-process) expr)
-    (exchange-point-and-mark)
+      ;; eval in R; this way can check against calc ouput
+      (ess-send-string (ess-get-process) expr)
+      (exchange-point-and-mark)
 
-    ;; eval in calc and insert the result
-    (insert (concat " = " (calc-eval expr) " "))
-    (end-of-line))))
+      ;; eval in calc and insert the result
+      (insert (concat " = " (calc-eval expr) " "))
+      (end-of-line))))
 
 
 (defun nssend ()
@@ -1152,10 +1168,10 @@ commenting out the ibuffer line."
     (switch-to-buffer "time_stamp.org")
     (end-of-buffer)
     (when (not (re-search-backward "\* Backups" nil t))
-                     (progn
-                       (end-of-buffer)
-                       (beginning-of-line)
-                       (insert "* Backups\n\n")))
+      (progn
+        (end-of-buffer)
+        (beginning-of-line)
+        (insert "* Backups\n\n")))
     (re-search-backward "\* Backups" nil t)
     ;; cond function to either insert the date if it's not
     ;; there already or just insert the timer information if
@@ -1255,8 +1271,8 @@ w/ prefix arg, read a string to be used for subsetting."
 
     ;; ask which choice I want, then act accordingly
     (let* ((my-choice (read-key-sequence (propertize
-                                (mapconcat 'identity choice "")
-                                'face 'mac-window-select-face)))
+                                          (mapconcat 'identity choice "")
+                                          'face 'mac-window-select-face)))
            ;; return the position in the list that matches my choice above
            ;; use this to concat from 'command'
            (number (seq-position keys-again my-choice)))
@@ -1268,38 +1284,38 @@ w/ prefix arg, read a string to be used for subsetting."
               (= number 0)
               (not subset))
              (ess-send-string (ess-get-process)
-                           (concat (nth number command) object)
-                           'nowait))
+                              (concat (nth number command) object)
+                              'nowait))
 
             ;; is.something() case
             ((and
               (= number 4)
               (not subset))
-            (ess-send-string (ess-get-process)
-                             (concat "is." (read-string "is. what? (e.g., vector): ") "(" object ")")
-                             'nowait))
+             (ess-send-string (ess-get-process)
+                              (concat "is." (read-string "is. what? (e.g., vector): ") "(" object ")")
+                              'nowait))
 
             ;; all others w/ no prefix arg
             ((not subset)
              (ess-send-string (ess-get-process)
-                           (concat (nth number command) object ")")
-                           'nowait))
+                              (concat (nth number command) object ")")
+                              'nowait))
 
 
             ;; is.something w/ subset
             ((and subset
                   (= number 4))
              (ess-send-string (ess-get-process)
-                             (concat "is." (read-string "is. what? (e.g., vector): ") "(" object subset)
-                             'nowait))
+                              (concat "is." (read-string "is. what? (e.g., vector): ") "(" object subset)
+                              'nowait))
 
             ;; subset arg
             (subset
              (ess-send-string (ess-get-process)
-                           (concat (nth number command) object subset)
-                           'nowait)))
-          (deactivate-mark)
-	  (message ""))))
+                              (concat (nth number command) object subset)
+                              'nowait)))
+      (deactivate-mark)
+      (message ""))))
 
 
 ;; -----
@@ -1307,24 +1323,24 @@ w/ prefix arg, read a string to be used for subsetting."
 (defun mac-writing-output ()
   "Format my writing for insertion into ms-word."
   (interactive)
-(progn
-  (get-buffer-create "*writing_output*")
-  (kill-ring-save (point) (mark) t)
-  (with-current-buffer "*writing_output*"
-    (delete-region (point-min) (point-max))
-    (yank)
-    (goto-char (point-min))
-    (while (re-search-forward "\\(.\\)\\(\n\\)" (point-max) t)
-      (replace-match " " nil nil nil 2))
-    (goto-char (point-min))
-    (while (and
-            (re-search-forward "\\. *\n" (point-max) t)
-            (< (point) (point-max)))
+  (progn
+    (get-buffer-create "*writing_output*")
+    (kill-ring-save (point) (mark) t)
+    (with-current-buffer "*writing_output*"
+      (delete-region (point-min) (point-max))
+      (yank)
+      (goto-char (point-min))
+      (while (re-search-forward "\\(.\\)\\(\n\\)" (point-max) t)
+        (replace-match " " nil nil nil 2))
+      (goto-char (point-min))
+      (while (and
+              (re-search-forward "\\. *\n" (point-max) t)
+              (< (point) (point-max)))
         (insert "\n"))
+      )
+    (switch-to-buffer "*writing_output*")
     )
-  (switch-to-buffer "*writing_output*")
   )
-)
 
 
 ;; -----
