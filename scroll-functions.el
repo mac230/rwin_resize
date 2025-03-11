@@ -14,6 +14,7 @@
          (R-buffer)
          (help-page)
          (my-xwidget)
+         (my-doc)
          (current-buffer (current-buffer))
          (scroll-error-top-bottom t)
          (scroll-fun
@@ -44,9 +45,19 @@
 	      (xwidget-webkit-scroll-up-line val)
 	      (switch-to-buffer-other-window current-buffer)
 	      (goto-char current-point))))
+         (doc-scroll-fun
+          (lambda (my-doc)
+	    (switch-to-buffer-other-window my-doc)
+	    (setq val (/ val (abs val)))
+	    (unless (or
+		     (< (+ val (doc-view-current-page)) 1)
+		     (> (+ val (doc-view-current-page)) (doc-view-last-page-number)))
+	      (doc-view-goto-page (+ (doc-view-current-page) val)))
+	    (switch-to-buffer-other-window current-buffer)
+            (goto-char current-point)))
          )
 
-  ;; use dolist to find which of the different buffer types you have
+    ;; use dolist to find which of the different buffer types you have
     (dolist (buffer window-list)
       ;; man page
       (when (eq
@@ -68,6 +79,7 @@
 	     (buffer-local-value 'major-mode (window-buffer buffer))
 	     'help-mode)
 	(setq help-page (window-buffer buffer)))
+      ;; xwidget browser
       (when (or
              (eq
 	     (buffer-local-value 'major-mode (window-buffer buffer))
@@ -76,45 +88,61 @@
 	     (buffer-local-value 'major-mode (window-buffer buffer))
 	     'nov-xwidget-webkit-mode))
 	(setq my-xwidget (window-buffer buffer)))
+      ;; doc-view document
+      (when (eq
+	     (buffer-local-value 'major-mode (window-buffer buffer))
+	     'doc-view-mode)
+	(setq my-doc (window-buffer buffer)))
       )
 
-  ;; now use cond to decide how to proceed
+    ;; now use cond to decide how to proceed
     (cond
      ;; have just a pdf (most likely use scenario)
      ((and pdf
            (not man)
            (not R-buffer)
            (not help-page)
-           (not my-xwidget))
+           (not my-xwidget)
+           (not my-doc))
       (funcall pdf-scroll-fun))
      ;; have just a man page
      ((and man
            (not pdf)
            (not R-buffer)
            (not help-page)
-           (not my-xwidget))
+           (not my-xwidget)
+           (not my-doc))
       (funcall scroll-fun man))
      ;; have just R help window
      ((and R-buffer
            (not pdf)
            (not man)
            (not help-page)
-           (not my-xwidget))
+           (not my-xwidget)
+           (not my-doc))
       (funcall scroll-fun R-buffer))
      ;; have just help window
      ((and help-page
            (not pdf)
            (not man)
            (not R-buffer)
-           (not my-xwidget))
+           (not my-xwidget)
+           (not my-doc))
       (funcall scroll-fun help-page))
      ;; have just an xwidget view
-     ;; have just help window
      ((and my-xwidget
            (not pdf)
            (not man)
-           (not R-buffer))
+           (not R-buffer)
+           (not my-doc))
       (funcall xwidget-scroll-fun my-xwidget))
+          ;; have just an doc view
+     ((and my-doc
+           (not pdf)
+           (not man)
+           (not R-buffer)
+           (not my-xwidget))
+      (funcall doc-scroll-fun my-doc))
 
      ;; have some other configuration
      ((or pdf man R-buffer help-page)
