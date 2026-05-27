@@ -611,7 +611,7 @@ and ielm for the lower editing window.
 	 (modes (map 'list modes-fun w)))
     (cond
      ;; ESS 
-     ((member 'inferior-ess-mode modes)
+     ((member 'ess-r-mode modes)
       (ess-eval-region-or-function-or-paragraph nil))
      ;; shell
      ((member 'shell-mode modes)
