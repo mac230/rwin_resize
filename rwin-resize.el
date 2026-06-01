@@ -582,8 +582,9 @@ and ielm for the lower editing window.
 		      (with-current-buffer (window-buffer arg)
 			major-mode)))
 	 (modes (map 'list modes-fun w)))
-    (cond
-     ((member 'ess-r-mode modes)
+ (cond
+     ((or (member 'ess-r-mode modes)
+          (member 'inferior-ess-r-mode modes))
       (ess-eval-line))
      ((member 'shell-mode modes)
       (progn
@@ -1057,6 +1058,7 @@ creates a buffer to dump time stamp information into and messages
 the timer information as well.  This function can be debugged by
 commenting out the ibuffer line."
   (interactive "pProblem time\nsEnter Time (minutes): ")
+
   (let* ((curr-buff (current-buffer))
          ;; date-head denotes the header I create for each day
          (date-head (format-time-string "\/%m.%d.%Y\/"))
