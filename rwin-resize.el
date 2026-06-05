@@ -773,7 +773,8 @@ and ielm for the lower editing window.
   (interactive)
   (let ((count))
     
-    (if (eq major-mode 'ess-mode)
+    (if (or (eq major-mode 'ess-mode)
+            (eq major-mode 'ess-r-mode))
         (setq count 2)
       (setq count 1))
   (cond
@@ -880,9 +881,10 @@ Inserts this separator as a comment in R, python, and shell modes."
    ;; determine which separator to use based on major mode
    (cond
     ((or
-        (eq major-mode 'ess-mode)
-        (eq major-mode 'python-mode)
-        (eq major-mode 'sh-mode))
+      (eq major-mode 'ess-mode)
+      (eq major-mode 'ess-r-mode)
+      (eq major-mode 'python-mode)
+      (eq major-mode 'sh-mode))
      (setq sep "## -----\n## "))
 
     ((or
