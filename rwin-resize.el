@@ -19,17 +19,20 @@
 (defun mac-process-placer (window &optional my-process)
   "Select a process and place its buffer in the appropriate window."
  (let* (
-        (claude-process (process-name
-                         (car (seq-filter (lambda (proc)
-                                            (string-prefix-p
-                                             "claude:"
-                                             (process-name proc)))
-                                          (process-list)))))
-        (process-names (reverse
-                        (cons claude-process
-                              '(Python ielm shell R))))
+        (claude-process (when-let ((proc (seq-find (lambda (proc)
+                             (string-prefix-p "claude:" (process-name proc)))
+                           (process-list))))
+                          (process-name proc)))
+        (process-names)
 	(process-buf))
- 
+
+   (if claude-process
+       (setq process-names
+             (reverse
+              (cons claude-process
+                    '(Python ielm shell R))))
+     (setq process-names (reverse '(Python ielm shell R))))
+
    (if my-process
        (window--display-buffer
         my-process
@@ -46,7 +49,6 @@
         process-buf
         window
         'reuse nil nil)))))
-
 
 ;; necessary to keep R help from throwing an error
 (setq ess-help-pop-to-buffer nil)
